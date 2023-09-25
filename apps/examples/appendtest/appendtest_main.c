@@ -59,17 +59,66 @@
 #include<unistd.h>
 #include<time.h>
 #include<stdio.h>
-
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
+char buf[240];
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int hello_main(int argc, char *argv[])
+int appendtest_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
-	return 0;
+	time_t start,end;
+    for ( int sz = 60; sz < 240; sz *= 2)
+    {
+        for (int  i = 0; i < sz; i++){
+            buf[i] =  'N';
+        }
+        double total_time = 0;
+       
+        for (int i=0 ; i < 20; i++ ) 
+        {
+            start = clock();
+            for (int f=0;f < 10;f++)   // for 10 files
+            {
+                char filename[20];
+                snprintf(filename, 20, "/mnt/file_%d.txt", f);
+                int fd = open(filename, O_CREAT | O_WRONLY);
+                if (fd < 0)
+                {
+                    printf("can't Open File, filename: %s, ret: %d", filename, fd);
+                    continue;
+                }
+                // printf("%d",fd);
+                write(fd, buf, sz);
+                close(fd);
+                for (int i = 0; i < 199; i++)
+                {
+                    fd = open(filename,O_WRONLY);
+                    if (fd<0)
+                    {
+                        printf("can't Open File: %d", fd);
+                        continue;
+                    }
+                    // printf("%d\n",fd);
+                    lseek(fd, 0, SEEK_END);
+                    write(fd, buf, sz);
+                    close(fd);
+                }
+            }
+            end = clock();
+            // printf("%ld %ld\n",end, start);
+            double time = ( (double)end - start )  / CLOCKS_PER_SEC;
+            total_time += time;
+            printf("Time for iteration %d : %lf\n",i,time);
+            for (int f = 0; f < 10; f++) { 
+                char filename[20];
+                snprintf(filename, 20, "/mnt/file_%d.txt", f);
+                unlink(filename);
+            }
+        }
+        printf("Total Time for %d bytes buffer: %lf\n",sz,total_time);
+    }
+    return 0;
 }

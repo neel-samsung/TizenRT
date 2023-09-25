@@ -1,0 +1,3 @@
+config ENTRY_APPENDTEST
+	bool "\"Hello, World!\" example"
+	depends on EXAMPLES_APPENDTEST
