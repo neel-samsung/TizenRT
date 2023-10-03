@@ -260,33 +260,33 @@ int appendtest(void)
                         fd = open(filename, O_CREAT | O_WRONLY);
                         if (fd < 0)
                         {
-                        printf("can't Open File, filename: %s, ret: %d", filename, fd);
-                        goto errout;
+                                printf("can't Open File, filename: %s, ret: %d", filename, fd);
+                                goto errout;
                         }
                         // printf("%d",fd);
                         ret = write(fd, buf, sz);
-                        if (ret != i) {
+                        if (ret != sz) {
                                 printf("Unable to write to test file %s\n", filename);
                                 goto errout;
                         }
                         close(fd);
                         for (int i = 0; i < 199; i++)
                         {
-                        fd = open(filename,O_WRONLY);
-                        if (fd < 0)
-                        {
-                                printf("can't Open File, filename: %s, ret: %d", filename, fd);
-                                goto errout;
+                                fd = open(filename,O_WRONLY);
+                                if (fd < 0)
+                                {
+                                        printf("can't Open File, filename: %s, ret: %d", filename, fd);
+                                        goto errout;
 
-                        }
-                        // printf("%d\n",fd);
-                        lseek(fd, 0, SEEK_END);
-                        ret = write(fd, buf, sz);
-                        if (ret != i) {
-                                printf("Unable to write to test file %s\n", filename);
-                                goto errout;
-                        }
-                        close(fd);
+                                }
+                                // printf("%d\n",fd);
+                                lseek(fd, 0, SEEK_END);
+                                ret = write(fd, buf, sz);
+                                if (ret != sz) {
+                                        printf("Unable to write to test file %s, ret: %d\n", filename, fd);
+                                        goto errout;
+                                }
+                                close(fd);
                         }
                 }
                 end = clock();
@@ -332,4 +332,5 @@ int appendtest_main(int argc, char *argv[])
 
         errout:
         printf("Test Failed");
+        return 0;
 }   
