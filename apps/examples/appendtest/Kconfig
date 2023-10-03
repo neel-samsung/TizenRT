@@ -4,10 +4,10 @@
 #
 
 config EXAMPLES_APPENDTEST
-	bool "\"Hello, World!\" example"
+	bool "Append Test App"
 	default n
 	---help---
-		Enable the \"Hello, World!\" example
+		Enable the Append Test App
 
 config USER_ENTRYPOINT
 	string
