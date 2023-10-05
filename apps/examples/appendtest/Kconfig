@@ -9,6 +9,17 @@ config EXAMPLES_APPENDTEST
 	---help---
 		Enable the Append Test App
 
+if EXAMPLES_APPENDTEST
+
+menu option
+config EXAMPLES_APPENDTEST_READBACKVERIFY
+	bool "ReadBack and Verification"
+	default n
+	depends on EXAMPLES_APPENDTEST
+endmenu
+endif
+
 config USER_ENTRYPOINT
 	string
 	default "appendtest_main" if ENTRY_APPENDTEST
+	

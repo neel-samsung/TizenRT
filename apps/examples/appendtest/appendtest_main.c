@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2023 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/hello/hello_main.c
+ * examples/appendtest/appendtest_main.c
  *
  *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -55,9 +55,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include<fcntl.h>
-#include<unistd.h>
-#include<time.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -82,18 +82,9 @@
 
 int frt_fd = -1;
 /****************************************************************************
- * hello_main
+ * appendtest_main
  ****************************************************************************/
 char buf[240];
-static void output(unsigned long time, int itr, int buf_size, int file_size)
-{
-        printf("====================================================================================================\n");
-        printf("Time taken to read file of size = %d, with buffer of size = %d, itr #%d\n", file_size, buf_size, itr);
-        printf(" ==> %lu microseconds <==> %03f seconds\n", time, (float)time/1000000);
-        printf("====================================================================================================\n");
-        printf("==============================================================================================================\n\n");
-        return;
-}
 int init_sample_file(int buffer_length)
 {
 	int fd;
@@ -137,13 +128,14 @@ int create_PPE(const char *dir_path)
                 printf("Unable to open sample file ro reading\n");
                 return -EIO;
         }
+        sample_buf = (char *)malloc(2049); // buffer size 2 KB
 
-        sample_buf = (char *)malloc(65537);
-
-        ret = read(fd, sample_buf, 65536);
-        if (ret != 65536) {
-                printf("Unable to read from Sample File\n");
-                goto errout;
+        for( int j = 0; j < 32; j++) {
+                ret = read(fd, sample_buf, 2048);
+                if (ret != 2048) {
+                        printf("Unable to read from Sample File\n");
+                        goto errout;
+                }
         }
 
         close(fd);
@@ -161,11 +153,12 @@ int create_PPE(const char *dir_path)
                         printf("Failed to open garbage file for creation\n");
                         goto errout;
                 }
-
-                ret = write(fd, sample_buf, 65536);
-                if (ret != 65536) {
-                        printf("Unable to write to garbage file\n");
-                        goto errout;
+                for ( int j = 0; j < 32; j++) {
+                        ret = write(fd, sample_buf, 2048);
+                        if (ret != 2048) {
+                                printf("Unable to write to garbage file\n");
+                                goto errout;
+                        }
                 }
 
                 close(fd);
@@ -216,21 +209,52 @@ int create_max_file(char *file_name, long int size)
 }
 int appendtest(void)
 {   
-        int fd,ret;
+        int fd,ret,i;
+        char *sample_buf;
         ret = create_PPE(TEST_DIR_SINGLE);
         char *tmp_buf = "This is data in the temporary buffer. This will be written to the file for testing Filesystems with TizenRT RTOS.\n";
         char multi_file_name[TEST_FILE_NAME_LEN_MAX];
         if (ret != OK) {
                 printf("Unable to create PPE\n");
-                return -1;
+                goto errout;
         }
-    	ret = mkdir(TEST_DIR_MULTIPLE, 0777);
-	snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%d", TEST_FILE_MULTIPLE, 0);
+    	// ret = mkdir(TEST_DIR_MULTIPLE, 0777);
+	// snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%d", TEST_FILE_MULTIPLE, 0);
 
-	ret = create_max_file(multi_file_name, 200*1024);
-	if (ret == OK) {
-		printf("File of size 200 KiB created\n");
-	}
+	printf("PPE Complete\n");
+
+        fd = open(SAMPLE_FILE, O_RDOK);
+        if (fd < 0) {
+                printf("Failed to open sample file for reading\n");
+                return - EIO;
+        }
+	printf("Sample File opened\n");
+        sample_buf = (char *)malloc(1025);
+
+        ret = read(fd, sample_buf, 1024);
+        if (ret != 1024) {
+                printf("Unable to read from sample file\n");
+                goto errout;
+        }
+	printf("Read 1 buf from sample file\n");
+
+        close(fd);
+
+       for (i = 0; i < 4; i++) {
+               snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%s%d", TEST_FILE_SINGLE, "_", i);
+        //        for( int j )
+               ret = create_max_file(multi_file_name, 64 * 1024);
+               if (ret != OK) {
+                       printf("Unable to create dummy file %d\n", i);
+                       return -1;
+               }
+       }
+
+	ret = mkdir(TEST_DIR_MULTIPLE, 0777);
+        if (ret < 0) {
+                printf("Unable to create main test directory\n");
+                goto errout;
+        }
         
         time_t start,end;
         for ( int sz = 60; sz <= 240; sz *= 2)
@@ -242,63 +266,104 @@ int appendtest(void)
         
                 for (int i=0 ; i < 20; i++ ) 
                 {
-                start = clock();
-                int n = 10;//-> For file size 60
-        //		n = 9; //-> For file size 120
-        //		n = 5; //-> For file size 240
-        //		n = 1; //-> Temporary
-                if (i == 120) {
-                        n = 9;
-                }
-                if (i == 240) {
-                        n = 5;
-                }
-                for (int f=0; f < n; f++)   // for 10 files
-                {
-                        char filename[20];
-                        snprintf(filename, 20, "/mnt/file_%d.txt", f);
-                        fd = open(filename, O_CREAT | O_WRONLY);
-                        if (fd < 0)
-                        {
-                                printf("can't Open File, filename: %s, ret: %d", filename, fd);
-                                goto errout;
+                        start = clock();
+                        int n = 10;//-> For file size < 200
+                        if (i == 240) {
+                                n = 8;
                         }
-                        // printf("%d",fd);
-                        ret = write(fd, buf, sz);
-                        if (ret != sz) {
-                                printf("Unable to write to test file %s\n", filename);
-                                goto errout;
-                        }
-                        close(fd);
-                        for (int i = 0; i < 199; i++)
+                        for (int f=0; f < n; f++)   // for n files
                         {
-                                fd = open(filename,O_WRONLY);
+                                snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%s%d", TEST_FILE_SINGLE, "_", i);
+                                fd = open(multi_file_name, O_CREAT | O_WRONLY);
                                 if (fd < 0)
                                 {
-                                        printf("can't Open File, filename: %s, ret: %d", filename, fd);
+                                        printf("can't Open File, filename: %s, ret: %d", multi_file_name, fd);
                                         goto errout;
-
                                 }
-                                // printf("%d\n",fd);
-                                lseek(fd, 0, SEEK_END);
+                                // printf("%d",fd);
                                 ret = write(fd, buf, sz);
                                 if (ret != sz) {
-                                        printf("Unable to write to test file %s, ret: %d\n", filename, fd);
+                                        printf("Unable to write to test file %s\n", multi_file_name);
                                         goto errout;
                                 }
                                 close(fd);
+                                char *read_buf[240];
+                                // Readback and verification
+                                #ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
+                                // printf("Performing Readbackverify...");
+                                
+                                fd = open(multi_file_name, O_RDONLY);
+                                if(fd < 0)
+                                {
+                                        printf("can't Open File, filename: %s, ret: %d", multi_file_name, fd);
+                                        goto errout;
+                                }
+                                ret = read(fd, read_buf, sz);
+                                if (ret != sz) {
+                                        printf("Unable to read to test file %s\n", multi_file_name);
+                                        goto errout;
+                                }
+                                if( strcmp(buf, read_buf)==0) {
+                                        printf("Readback verification Failed, filename %s, ret: %d", multi_file_name, fd);
+                                        goto errout;
+                                }
+                                close(fd);
+                                #endif
+
+                                for (int i = 0; i < 199; i++)
+                                {
+                                        fd = open(multi_file_name,O_WRONLY);
+                                        if (fd < 0)
+                                        {
+                                                printf("can't Open File, filename: %s, ret: %d", multi_file_name, fd);
+                                                goto errout;
+
+                                        }
+                                        // printf("%d\n",fd);
+                                        lseek(fd, 0, SEEK_END);
+                                        ret = write(fd, buf, sz);
+                                        if (ret != sz) {
+                                                printf("Unable to write to test file %s, ret: %d\n", multi_file_name, fd);
+                                                goto errout;
+                                        }
+                                        close(fd);
+
+                                        // Readback and verification
+                                        #ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
+//                                      printf("Performing Readbackverify...");                                        
+                                        fd = open(multi_file_name, O_RDONLY);
+                                        if(fd < 0)
+                                        {
+                                                printf("can't Open File, filename: %s, ret: %d", multi_file_name, fd);
+                                                goto errout;
+                                        }
+                                        lseek(fd, -sz, SEEK_END);
+                                        ret = read(fd, read_buf, sz);
+                                        if (ret != sz) {
+                                                printf("Unable to read to test file %s\n", multi_file_name);
+                                                goto errout;
+                                        }
+                                        if( strcmp(buf, read_buf)==0) {
+                                                printf("Readback verification Failed, filename %s, ret: %d", multi_file_name, fd);
+                                                goto errout;
+                                        }
+                                        close(fd);
+                                        // #else 
+                                        // printf("not in Readback and Verify");
+                                        #endif
+
+                                }
+
                         }
-                }
-                end = clock();
-                // printf("%ld %ld\n",end, start);
-                double time = ( (double)end - start )  / CLOCKS_PER_SEC;
-                total_time += time;
-                printf("Time for iteration %d : %lf\n",i,time);
-                for (int f = 0; f < 10; f++) { 
-                        char filename[20];
-                        snprintf(filename, 20, "/mnt/file_%d.txt", f);
-                        unlink(filename);
-                }
+                        end = clock();
+                        // printf("%ld %ld\n",end, start);
+                        double time = ( (double)end - start )  / CLOCKS_PER_SEC;
+                        total_time += time;
+                        printf("Time for iteration %d : %lf\n", i, time);
+                        for (int f = 0; f < 10; f++) { 
+                                snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%s%d", TEST_FILE_SINGLE, "_", i);
+                                unlink(multi_file_name);
+                        }
                 }
                 printf("Total Time for %d bytes buffer: %lf\n",sz,total_time);
         }
