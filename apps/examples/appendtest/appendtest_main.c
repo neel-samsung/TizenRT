@@ -90,7 +90,7 @@ int init_sample_file(int buffer_length)
 	int fd;
         int ret;
         int i;
-        char sample_buf[] = "Writing data into sample file\n";
+        char sample_buf[] = "Writing data into sample file";
 
         fd = open(SAMPLE_FILE, O_CREAT| O_RDWR);
         if (fd < 0) {
@@ -129,7 +129,6 @@ int create_PPE(const char *dir_path)
          * Creating 64 KiB files at a time and deleting them to create garbage
          * However, we do not want the garbage to be collected before the test itself starts
          */
-//	for (i = 0; i < 1; i++) {
         for (i = 0; i < ((FS_PART_SIZE - 128) / 64); i++) {
                 fd1 = open(SAMPLE_FILE, O_RDONLY);
                 if (fd1 < 0) {
@@ -156,11 +155,6 @@ int create_PPE(const char *dir_path)
                 }
 
                 close(fd1);
-               
-
-                
-
-
                 close(fd2);
                 unlink(TEST_FILE_SINGLE);
         }
@@ -213,7 +207,7 @@ int readBackVerify(char *multi_file_name, char *sample_buf, int sz)
         #ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
         // printf("Performing Readbackverify...");
         int fd, ret;
-        char *read_buf = (char *)malloc(sz + 1);
+        char *read_buf = (char *) malloc(sz + 1);
         fd = open(multi_file_name, O_RDONLY);
         if(fd < 0) {
                 printf("can't Open File, filename: %s, ret: %d\n", multi_file_name, fd);
@@ -224,13 +218,15 @@ int readBackVerify(char *multi_file_name, char *sample_buf, int sz)
                 printf("Unable to read to test file %s\n", multi_file_name);
                 goto errout;
         }
-        if( strncmp(sample_buf, read_buf)!=0) {
+        if( strncmp(sample_buf, read_buf, sz) != 0) {
                 printf("Readback verification Failed, filename %s, ret: %d\n", multi_file_name, fd);
                 goto errout;
         }
         close(fd); 
         free(read_buf); 
+        printf("=======================================\n");
         printf("Buffer compared to written data: OK\n");  
+        printf("=======================================\n");
         return OK;
         errout: 
                 free(read_buf);
@@ -243,7 +239,11 @@ int verifymanually(char *multi_file_name, int sz)
         #ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
         // printing the file to verify content manually (buffer written 200 times or not)
         int fd, ret, l;
-        char *read_buf = (char *)malloc(sz * 200 + 1);
+        char *read_buf = (char *)malloc(sz * 199 + 1);
+        printf("=======================================\n");
+        printf("verifing Manually\n");
+        printf("=======================================\n");
+
         fd = open(multi_file_name, O_RDONLY);
         if(fd < 0) {
                 printf("can't Open File, filename: %s, ret: %d\n", multi_file_name, fd);
@@ -251,21 +251,19 @@ int verifymanually(char *multi_file_name, int sz)
         }
         lseek(fd, sz, SEEK_SET);
         ret = read(fd, read_buf, sz * 199);
-        if (ret != (sz * 200)) {
+        if (ret != (sz * 199)) {
                 printf("Unable to read to test file %s\n", multi_file_name);
                 goto errout;
         }
-        //printf("Written data for verification manually: %s\n", read_buf);
-        free(read_buf);
-        close(fd);
-
         for ( l = 0; l < (sz * 199); l++) {
                 printf("%c", read_buf[l]);
-                if (((l + 1) % 80) == 0) {
+                if (((l + 1) % 180) == 0) {
                         printf("\n");
                 }
         }
-
+        printf("=======================================\n");
+        free(read_buf);
+        close(fd);
         return OK;
         errout: 
                 free(read_buf);
@@ -286,8 +284,6 @@ int appendtest(void)
                 printf("Unable to create PPE\n");
                 goto errout;
         }
-    	// ret = mkdir(TEST_DIR_MULTIPLE, 0777);
-	// snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%d", TEST_FILE_MULTIPLE, 0);
 
 	printf("PPE Complete\n");
 
@@ -310,7 +306,6 @@ int appendtest(void)
 
        for (i = 0; i < 4; i++) {
                snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%s%d", TEST_FILE_SINGLE, "_", i);
-        //        for( int j )
                ret = create_max_file(multi_file_name, 64 * 1024);
                if (ret != OK) {
                        printf("Unable to create dummy file %d\n", i);
@@ -334,7 +329,7 @@ int appendtest(void)
                 for (i = 0 ; i < 20; i++ ) 
                 {
                         start = clock();
-                        int n = 10;//-> For file size < 200
+                        int n = 10;               //-> For file size < 200
                         if (sz == 240) {
                                 n = 8;
                         }
@@ -348,7 +343,6 @@ int appendtest(void)
                                         perror("error in 199 times:");
                                         goto errout;
                                 }
-                                // printf("%d",fd);
                                 ret = write(fd, sample_buf, sz);
                                 if (ret != sz) {
                                         printf("Unable to write to test file %s\n", multi_file_name);
@@ -374,12 +368,6 @@ int appendtest(void)
                                         }
                                         lseek(fd, 0, SEEK_END);
                                         ret = write(fd, sample_buf, sz);
-                                        // printf("buffer: %s", sample_buf);
-                                        // if(itr < 5 ) {
-                                        //         char *testbuf = (char *) malloc( 60*200 + 1);
-                                        //         read(fd, testbuf, sz * (2 + itr));
-                                        //         printf("Test: file: %s ", testbuf);
-                                        // }
                                                 
                                         if (ret != sz) {
                                                 printf("Unable to write to test file %s, ret: %d\n", multi_file_name, fd);
@@ -394,7 +382,6 @@ int appendtest(void)
                                 }
                         }
                         end = clock();
-                        // printf("%ld %ld\n",end, start);
                         double time = ( (double)end - start )  / CLOCKS_PER_SEC;
                         total_time += time;
                         printf("Time for iteration %d : %lf\n", i, time);
