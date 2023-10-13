@@ -74,6 +74,11 @@
 #include <tinyara/fs/procfs.h>
 #endif
 
+unsigned long write_count = 0;
+unsigned long read_count = 0;
+unsigned long bwrite_count = 0;
+unsigned long bread_count = 0;
+unsigned long erase_count = 0;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -234,7 +239,7 @@ static int part_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 	off_t eoffset;
 
 	DEBUGASSERT(priv);
-
+	erase_count += nblocks;
 	/* Make sure that erase would not extend past the end of the partition */
 
 	if (!part_blockcheck(priv, (startblock + nblocks - 1) * priv->blkpererase)) {
@@ -267,7 +272,7 @@ static ssize_t part_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nb
 	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)dev;
 
 	DEBUGASSERT(priv && (buf || nblocks == 0));
-
+	bread_count += nblocks;
 	/* Make sure that read would not extend past the end of the partition */
 
 	if (!part_blockcheck(priv, startblock + nblocks - 1)) {
@@ -295,7 +300,7 @@ static ssize_t part_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t n
 	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)dev;
 
 	DEBUGASSERT(priv && (buf || nblocks == 0));
-
+	bwrite_count += nblocks;
 	/* Make sure that write would not extend past the end of the partition */
 
 	if (!part_blockcheck(priv, startblock + nblocks - 1)) {
@@ -324,7 +329,7 @@ static ssize_t part_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes,
 	off_t newoffset;
 
 	DEBUGASSERT(priv && (buffer || nbytes == 0));
-
+	read_count += nbytes;
 	/* Does the underlying MTD device support the read method? */
 
 	if (priv->parent->read) {
@@ -351,7 +356,6 @@ static ssize_t part_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes,
 /****************************************************************************
  * Name: part_write
  ****************************************************************************/
-
 #ifdef CONFIG_MTD_BYTE_WRITE
 static ssize_t part_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buffer)
 {
@@ -359,7 +363,8 @@ static ssize_t part_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes
 	off_t newoffset;
 
 	DEBUGASSERT(priv && (buffer || nbytes == 0));
-
+	write_count += nbytes;
+	// printf("Debug: write Called for %d bytes\n",nbytes);
 	/* Does the underlying MTD device support the write method? */
 
 	if (priv->parent->write) {
@@ -440,6 +445,25 @@ static int part_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	}
 	break;
 
+	case MTDIOC_PRINTCOUNT: {
+		fdbg("\n==================================================\n");
+		fdbg("Write count : %lu\n", write_count);
+		fdbg("Read count : %lu\n", read_count);
+		fdbg("Block Write count : %lu\n", bwrite_count);
+		fdbg("Block Read count : %lu\n", bread_count);
+		fdbg("Block Erase count : %lu\n", erase_count);
+		fdbg("Total written bytes = %lu\n", write_count + (bwrite_count *256));
+		fdbg("Total read bytes = %lu\n", read_count + (bread_count *256));
+		fdbg("\n==================================================\n");
+		write_count = 0;
+		read_count = 0;
+		bwrite_count = 0;
+		bread_count = 0;
+		erase_count = 0;
+		ret = OK;
+	}
+	break;
+	
 	default: {
 		/* Pass any unhandled ioctl() calls to the underlying driver */
 
@@ -447,7 +471,6 @@ static int part_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	}
 	break;
 	}
-
 	return ret;
 }
 

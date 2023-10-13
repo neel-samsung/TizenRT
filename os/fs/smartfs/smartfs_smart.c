@@ -68,6 +68,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <debug.h>
+#include <stdio.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -75,6 +76,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/smart.h>
+
 
 #include "smartfs.h"
 
@@ -827,9 +829,27 @@ static off_t smartfs_seek(FAR struct file *filep, off_t offset, int whence)
 
 static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	/* We don't use any ioctls */
+	struct inode *inode;
+	struct smartfs_mountpt_s *fs;
+	int ret;
 
-	return -ENOSYS;
+	switch (cmd) {
+	case BIOC_PRINTCOUNT: {
+		inode = filep->f_inode;
+		fs = inode->i_private;
+		ret = FS_IOCTL(fs, BIOC_PRINTCOUNT, (unsigned long)0);
+		if (ret < 0) {
+			fdbg("Error in PRINTCOUNT, Failed to count: %d\n", ret);
+			goto errout_with_semaphore;
+		}
+	}
+	break;
+		
+	}
+
+errout_with_semaphore:
+	smartfs_semgive(fs);
+	return ret;
 }
 
 /****************************************************************************

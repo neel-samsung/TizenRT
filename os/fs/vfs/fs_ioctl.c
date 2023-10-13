@@ -56,12 +56,12 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <stdio.h>
 #include <sys/ioctl.h>
 #include <sched.h>
 #include <errno.h>
 #include <assert.h>
-
+#include <debug.h>
 #include <net/if.h>
 
 #ifdef CONFIG_NET
@@ -112,7 +112,6 @@ int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
 	}
 
 	/* Yes on both accounts.  Let the driver perform the ioctl command */
-
 	return (int)inode->u.i_ops->ioctl(filep, req, arg);
 }
 
@@ -181,6 +180,7 @@ int ioctl(int fd, int req, unsigned long arg)
 
 	ret = fs_getfilep(fd, &filep);
 	if (ret < 0) {
+		fdbg("Error in fd");
 		errcode = -ret;
 		goto errout;
 	}
@@ -196,7 +196,7 @@ int ioctl(int fd, int req, unsigned long arg)
 		errcode = -ret;
 		goto errout;
 	}
-
+	
 	return ret;
 
 errout:

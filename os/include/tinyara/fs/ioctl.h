@@ -262,6 +262,7 @@
 										 *      the block with specific debug
 										 *      command and data.
 										 * OUT: None.  */
+#define BIOC_PRINTCOUNT _BIOC(0x000E)
 
 /* TinyAra MTD driver ioctl definitions ***************************************/
 
@@ -281,6 +282,8 @@
 #define MTDIOC_BULKERASE  _MTDIOC(0x0003)	/* IN:  None
 											 * OUT: None */
 #define MTDIOC_SETSPEED   _MTDIOC(0x0004)	/* IN:  New bus speed in Hz
+											 * OUT: None */
+#define MTDIOC_PRINTCOUNT  _MTDIOC(0x0005)	/* IN:  None
 											 * OUT: None */
 
 /* TinyAra ARP driver ioctl definitions (see include/netinet/arp.h) *******************/
@@ -473,3 +476,5 @@ extern "C" {
 #endif
 
 #endif							/* __INCLUDE_FS_IOCTL_H */
+
+

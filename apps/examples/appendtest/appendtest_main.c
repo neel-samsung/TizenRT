@@ -69,6 +69,8 @@
 
 /* File system includes. */
 
+#include <tinyara/fs/ioctl.h>
+
 #define ROOT                            "/mnt/"
 #define SAMPLE_FILE                     ROOT "sample_file"
 #define TEST_DIR_SINGLE                 ROOT "single"
@@ -79,6 +81,8 @@
 #define TEST_ITR                        10
 #define TIMER_DEVICE 			"/dev/timer0"
 #define FS_PART_SIZE			512
+
+#define NUM_APPENDS                     9
 
 int frt_fd = -1;
 /****************************************************************************
@@ -201,11 +205,10 @@ int create_max_file(char *file_name, long int size)
         close(fd);
         return OK;
 }
+
+#ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
 int readBackVerify(char *multi_file_name, char *sample_buf, int sz)
-{
-        // Readback and verification
-        #ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
-        // printf("Performing Readbackverify...");
+{     
         int fd, ret;
         char *read_buf = (char *) malloc(sz + 1);
         fd = open(multi_file_name, O_RDONLY);
@@ -232,16 +235,17 @@ int readBackVerify(char *multi_file_name, char *sample_buf, int sz)
                 free(read_buf);
                 printf("Test Failed, error: %d\n", errno);
                 return errno;
-        #endif
+
 }
+#endif
+
+#ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
 int verifymanually(char *multi_file_name, int sz)
 {
-        #ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
-        // printing the file to verify content manually (buffer written 200 times or not)
         int fd, ret, l;
-        char *read_buf = (char *)malloc(sz * 199 + 1);
+        char *read_buf = (char *)malloc(sz * NUM_APPENDS + 1);
         printf("=======================================\n");
-        printf("verifing Manually\n");
+        printf("Verifing Manually\n");
         printf("=======================================\n");
 
         fd = open(multi_file_name, O_RDONLY);
@@ -250,35 +254,52 @@ int verifymanually(char *multi_file_name, int sz)
                 goto errout;
         }
         lseek(fd, sz, SEEK_SET);
-        ret = read(fd, read_buf, sz * 199);
-        if (ret != (sz * 199)) {
+        ret = read(fd, read_buf, sz * NUM_APPENDS);
+        if (ret != (sz * NUM_APPENDS)) {
                 printf("Unable to read to test file %s\n", multi_file_name);
                 goto errout;
         }
-        for ( l = 0; l < (sz * 199); l++) {
+        for ( l = 0; l < (sz * NUM_APPENDS); l++) {
                 printf("%c", read_buf[l]);
-                if (((l + 1) % 180) == 0) {
+                if (((l + 1) % 80) == 0) {
                         printf("\n");
                 }
         }
-        printf("=======================================\n");
+        printf("\n=======================================\n");
         free(read_buf);
         close(fd);
         return OK;
-        errout: 
-                free(read_buf);
-                printf("Test Failed, error: %d\n", errno);
-                return errno;
-        #endif
+errout: 
+        free(read_buf);
+        printf("Test Failed, error: %d\n", errno);
+        return errno;
+
 }
+#endif
+
+void print_count()
+{
+        int ret;
+        int fd = open(SAMPLE_FILE, O_CREAT| O_RDWR);
+        if (fd < 0) {
+                printf("Unable to open sample file %s, fd = %d\n", SAMPLE_FILE, fd);
+                return -ENOMEM;
+        }
+        ret = ioctl( fd, BIOC_PRINTCOUNT, NULL);
+        if (ret < 0)
+        {
+                printf("Unable to print write count, ret = %d\n", ret);
+        }
+        close(fd);
+}
+
+
 int appendtest(void)
 {   
         int fd, ret, i, sz,f, itr;
         char *sample_buf;
         time_t start, end;
-
         ret = create_PPE(TEST_DIR_SINGLE);
-        // char *tmp_buf = "This is data in the temporary buffer. This will be written to the file for testing Filesystems with TizenRT RTOS.\n";
         char multi_file_name[TEST_FILE_NAME_LEN_MAX];
         if (ret != OK) {
                 printf("Unable to create PPE\n");
@@ -318,21 +339,23 @@ int appendtest(void)
                 printf("Unable to create main test directory\n");
                 goto errout;
         }
-        
+
         for (sz = 60; sz <= 240; sz *= 2)
         {
                 for ( i = 0; i < sz; i++){
                         buf[i] =  'N';
                 }
                 double total_time = 0;
-        
-                for (i = 0 ; i < 20; i++ ) 
+                
+                print_count();
+                for (i = 0 ; i < 1; i++ ) 
                 {
                         start = clock();
                         int n = 10;               //-> For file size < 200
                         if (sz == 240) {
                                 n = 8;
                         }
+                        
                         for (f = 0; f < n; f++)   // for n files
                         {
                                 snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%s%d", TEST_FILE_MULTIPLE, "_", f);
@@ -350,13 +373,15 @@ int appendtest(void)
                                 }
                                 close(fd);
 
+#ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
                                 ret = readBackVerify(multi_file_name, sample_buf, sz);
                                 if(ret < 0) {
                                         printf("Read back verification Failed!, ret: %d\n", ret);
                                         goto errout;
                                 }
+#endif
 
-                                for ( itr = 0; itr < 199; itr++)
+                                for ( itr = 0; itr < NUM_APPENDS; itr++)
                                 {
                                         fd = open(multi_file_name, O_WRONLY);
                                         if (fd < 0)
@@ -375,16 +400,22 @@ int appendtest(void)
                                         }
                                         close(fd);
                                 }
+
+#ifdef CONFIG_EXAMPLES_APPENDTEST_READBACKVERIFY
                                 ret = verifymanually(multi_file_name, sz);
                                 if(ret < 0) {
                                         printf("Read back verification Failed!, ret: %d\n", ret);
                                         goto errout;
                                 }
+#endif
                         }
                         end = clock();
+                        print_count();
                         double time = ( (double)end - start )  / CLOCKS_PER_SEC;
                         total_time += time;
+                        
                         printf("Time for iteration %d : %lf\n", i, time);
+
                         for (f = 0; f < n; f++) { 
                                 snprintf(multi_file_name, TEST_FILE_NAME_LEN_MAX, "%s%s%d", TEST_FILE_MULTIPLE, "_", f);
                                 ret = unlink(multi_file_name);
@@ -394,14 +425,15 @@ int appendtest(void)
                                         goto errout;
                                 }
                         }
+                        print_count();
+                        printf("Total Time for %d bytes buffer: %lf\n",sz,total_time);
                 }
-                printf("Total Time for %d bytes buffer: %lf\n",sz,total_time);
         }
         free(sample_buf);
         return OK;
-        errout:
-                free(sample_buf);
-                return -EIO;
+errout:
+        free(sample_buf);
+        return -EIO;
 
 }
 
@@ -425,8 +457,8 @@ int appendtest_main(int argc, char *argv[])
         }
         printf("FS Performance Test Completed successfully\n");
         ret = OK;
-
-        errout:
+        return ret;
+errout:
         printf("Test Failed");
         return 0;
 }   

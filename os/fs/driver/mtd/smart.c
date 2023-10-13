@@ -4831,6 +4831,14 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 		cmd = MTDIOC_XIPBASE;
 		break;
 
+	case BIOC_PRINTCOUNT:
+
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_PRINTCOUNT, (unsigned long)((uintptr_t)&dev->geo));
+		if (ret < 0) {
+			fdbg("MTD ioctl(MTDIOC_PRINTCOUNT) failed: %d\n", ret);
+		}
+		goto ok_out;
+
 	case BIOC_GETFORMAT:
 
 		/* Return the format information for the device. */
