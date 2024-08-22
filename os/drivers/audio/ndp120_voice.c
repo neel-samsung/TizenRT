@@ -710,14 +710,14 @@ static struct pm_callback_s g_pmndpcb =
  *
  ****************************************************************************/
 
-static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
+static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 {
 	/* Currently PM follows the state changes as follows,
 	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
 	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
 	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
 	 */
-	switch (pmstate) {
+	switch (state) {
 	case(PM_STANDBY): {
 		lldbg("entering STANDBY\n");
 		if (pmstate == PM_NORMAL) {
@@ -727,6 +727,7 @@ static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
 
 		/* state changed from PM_SLEEP to PM_STANDBY, use i2s bclk */
 		pmstate = PM_STANDBY;
+		configure_audio_extclk(g_ndp120);
 	}
 	break;
 	case(PM_SLEEP): {
@@ -734,6 +735,7 @@ static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
 		/* state changed from PM_STANDBY to PM_SLEEP, use internal clock */
 		g_ndp120->lower->set_pm_state(true);
 		pmstate = PM_SLEEP;
+		configure_audio_intclk(g_ndp120);
 	}
 	break;
 	default: {

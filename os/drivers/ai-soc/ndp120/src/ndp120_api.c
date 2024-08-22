@@ -77,7 +77,6 @@
 /* currently the max size of tank is limited to ~580ms  */
 #define AUDIO_BEFORE_MATCH_MS	(1500)
 
-/* when defined, the let the NDP use an external PDM clock */
 #define USE_EXTERNAL_PDM_CLOCK
 #define EXTERNAL_PDM_CLOCK_PDM_RATE 1536000
 
@@ -547,7 +546,7 @@ static int get_versions_and_labels(struct syntiant_ndp_device_s *ndp,
 }
 
 static int configure_audio(struct syntiant_ndp_device_s *ndp, unsigned int pdm_in_shift,
-				unsigned int audio_tank_ms, unsigned int *audio_frame_bytes)
+				unsigned int audio_tank_ms, unsigned int *audio_frame_bytes, bool use_extclk)
 {
 	const unsigned int PDM_MAX_OUT_SHIFT = 7; /* always set to max */
 	struct syntiant_ndp120_config_decimation_s decimation_config;
@@ -605,13 +604,18 @@ static int configure_audio(struct syntiant_ndp_device_s *ndp, unsigned int pdm_i
 		goto errout_configure_audio;
 	}
 
-#if defined(USE_EXTERNAL_PDM_CLOCK)
 	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
 	memset(&pdm_config, 0, sizeof(pdm_config));
 	pdm_config.interface = 0;
 	pdm_config.clk = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_ON;
 	pdm_config.sample_rate = 16000;
-	pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_EXTERNAL;
+	if (use_extclk) {
+		pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_EXTERNAL;
+		pdm_config.pdm_rate = EXTERNAL_PDM_CLOCK_PDM_RATE;
+	} else {
+		pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_DUAL_INTERNAL;
+		pdm_config.pdm_rate = 768000;
+	}
 	pdm_config.mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_STEREO;
 	pdm_config.pdm_rate = EXTERNAL_PDM_CLOCK_PDM_RATE;
 	
@@ -625,25 +629,6 @@ static int configure_audio(struct syntiant_ndp_device_s *ndp, unsigned int pdm_i
 		goto errout_configure_audio;
 	}
 	printf("NDP120 is configured for external clock\n");
-#else
-	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
-	memset(&pdm_config, 0, sizeof(pdm_config));
-	pdm_config.interface = 0;
-	pdm_config.clk = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_ON;
-	pdm_config.sample_rate = 16000;
-	pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_DUAL_INTERNAL;
-	pdm_config.mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_STEREO;
-	pdm_config.pdm_rate = 768000;
-	pdm_config.set = SYNTIANT_NDP120_CONFIG_SET_PDM_CLK
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_MODE
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_CLK_MODE
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_PDM_RATE
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_SAMPLE_RATE;
-	s = syntiant_ndp120_config_pdm(ndp, &pdm_config);
-	if (check_status("config pdm clock on", s)) {
-		goto errout_configure_audio;
-	}
-#endif
 
 	/*
 	 * get the current audio frame size which is governed by the audio
@@ -1005,9 +990,9 @@ int ndp120_init(struct ndp120_dev_s *dev)
 	add_dsp_flow_rules(dev->ndp);
 
 #if defined(USE_EXTERNAL_PDM_CLOCK)	
-	s = configure_audio(dev->ndp, DMIC_1536KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes);
+	s = configure_audio(dev->ndp, DMIC_1536KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes, true);
 #else
-	s = configure_audio(dev->ndp, DMIC_768KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes);
+	s = configure_audio(dev->ndp, DMIC_768KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes, false);
 #endif
 	if (s) {
 		auddbg("audio configure failed\n");
@@ -1027,6 +1012,34 @@ int ndp120_init(struct ndp120_dev_s *dev)
 	ndp120_kd_start(dev);
 
 errout_ndp120_init:
+	return s;
+}
+
+int configure_audio_intclk(struct ndp120_dev_s *dev)
+{
+	dev->ndp_interrupts_enabled = false;
+	const unsigned int AUDIO_TANK_MS =
+                AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
+                + 300  /* posterior latency of <= 24 MS/frame * 12 frames == 288 MS */
+                + 100; /* generous allowance for RTL8730E match-to-extract time */
+	const unsigned int DMIC_768KHZ_PDM_IN_SHIFT_FF = 8;
+	unsigned int audio_frame_bytes = 768;
+	int s = configure_audio(dev->ndp, DMIC_768KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes, false);
+	dev->ndp_interrupts_enabled = true;
+	return s;
+}
+
+int configure_audio_extclk(struct ndp120_dev_s *dev)
+{
+	dev->ndp_interrupts_enabled = false;
+	const unsigned int AUDIO_TANK_MS =
+                AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
+                + 300  /* posterior latency of <= 24 MS/frame * 12 frames == 288 MS */
+                + 100; /* generous allowance for RTL8730E match-to-extract time */
+	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 3;
+	unsigned int audio_frame_bytes = 768;
+	int s = configure_audio(dev->ndp, DMIC_1536KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes, true);
+	dev->ndp_interrupts_enabled = true;
 	return s;
 }
 
