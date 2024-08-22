@@ -34,6 +34,10 @@
 #include <tinyara/audio/ndp120.h>
 #include "ndp120_voice.h"
 
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -122,6 +126,9 @@ static const struct audio_ops_s g_audioops = {
 	ndp120_reserve,           /* reserve        */
 	ndp120_release,           /* release        */
 };
+
+static struct ndp120_dev_s *g_ndp120;
+static enum pm_state_e pmstate;
 
 /****************************************************************************
  * Private Functions
@@ -684,6 +691,77 @@ static void ndp120_interrupt_dispatch(int d)
 	ndp120_irq_handler(priv);
 }
 
+#ifdef CONFIG_PM
+static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
+
+static struct pm_callback_s g_pmndpcb =
+{
+	.notify  = ndp_pm_notify,
+	.prepare = ndp_pm_prepare,
+};
+
+/****************************************************************************
+ * Name: ndp_pm_notify
+ *
+ * Description:
+ *   Notify the driver of new power state. This callback is called after
+ *   all drivers have had the opportunity to prepare for the new power state.
+ *
+ ****************************************************************************/
+
+static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
+{
+	/* Currently PM follows the state changes as follows,
+	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
+	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 */
+	switch (pmstate) {
+	case(PM_STANDBY): {
+		lldbg("entering STANDBY\n");
+		if (pmstate == PM_NORMAL) {
+			/* No change required for PM_NORMAL to PM_SLEEP */
+			return;
+		}
+
+		/* state changed from PM_SLEEP to PM_STANDBY, use i2s bclk */
+		pmstate = PM_STANDBY;
+	}
+	break;
+	case(PM_SLEEP): {
+		lldbg("entering SLEEP\n");
+		/* state changed from PM_STANDBY to PM_SLEEP, use internal clock */
+		g_ndp120->lower->set_pm_state(true);
+		pmstate = PM_SLEEP;
+	}
+	break;
+	default: {
+		/* Nothing to do */
+	}
+	break;
+	}
+}
+
+/****************************************************************************
+ * Name: ndp_pm_prepare
+ *
+ * Description:
+ *   Request the driver to prepare for a new power state. This is a warning
+ *   that the system is about to enter into a new power state. The driver
+ *   should begin whatever operations that may be required to enter power
+ *   state. The driver may abort the state change mode by returning a
+ *   non-zero value from the callback function.
+ *
+ ****************************************************************************/
+
+static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate)
+{
+	lldbg("entry\n");
+	return OK;
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -733,6 +811,16 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	}
 
 	priv->lower->attach(ndp120_interrupt_dispatch, priv);
-	
+
+#ifdef CONFIG_PM
+	/* only used during pm callbacks */
+	g_ndp120 = priv;
+
+	pmstate = PM_NORMAL;
+
+	ret = pm_register(&g_pmndpcb);
+	DEBUGASSERT(ret == OK);
+#endif
+
 	return &priv->dev;
 }

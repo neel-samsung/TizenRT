@@ -117,6 +117,20 @@ static void rtl8730e_ndp120_irq_attach(ndp120_handler_t handler, FAR char *arg)
 	gpio_irq_enable(&g_ndp120info.data_ready);
 }
 
+static void rtl8730e_ndp120_pm(bool sleep)
+{
+	if (sleep) {
+		/* going to sleep, i2s bclk is set to tri state */
+		lldbg("Tri-stating I2S2 BCLK\n");
+		gpio_t gpio_i2s2_bclk;
+		gpio_init(&gpio_i2s2_bclk, PB_21);
+		gpio_dir(&gpio_i2s2_bclk, PIN_INPUT);
+		gpio_mode(&gpio_i2s2_bclk, PullNone);
+	} else {
+		/* wake up from sleep, no need to do anything */
+	}
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -163,7 +177,7 @@ int rtl8730e_ndp120_initialize(int minor)
 
 		g_ndp120info.lower.attach = rtl8730e_ndp120_irq_attach;
 		g_ndp120info.lower.irq_enable = rtl8730e_ndp120_enable_irq;
-
+		g_ndp120info.lower.set_pm_state = rtl8730e_ndp120_pm;
 		/* currently spi 0 is only attached to AI SoC, so no
 		 * need to change the spi config as we are dealing with
 		 * only 1 slave, if we add more slaves, parameters below
