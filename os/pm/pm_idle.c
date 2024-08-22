@@ -79,7 +79,7 @@ void pm_idle(void)
 	 * because state transition only happens when CPU receive TICK INTERRUPT. So checking pm state
 	 * multiple times within one tick is waste of CPU clocks and we should avoid it.
 	 */
-	if (now > stime) {
+	if (now > stime + 20000) {
 		stime = now;
 		/* Decide, which power saving level can be obtained */
 		newstate = pm_checkstate();

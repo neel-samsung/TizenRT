@@ -628,7 +628,7 @@ static int configure_audio(struct syntiant_ndp_device_s *ndp, unsigned int pdm_i
 	if (check_status("config pdm clock on", s)) {
 		goto errout_configure_audio;
 	}
-	printf("NDP120 is configured for external clock\n");
+	//printf("NDP120 is configured for external clock\n");
 
 	/*
 	 * get the current audio frame size which is governed by the audio
