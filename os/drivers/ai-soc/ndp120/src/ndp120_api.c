@@ -1103,6 +1103,8 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 				case 0:
 					serialno++;
 					auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+					/* No matter how we reached here (from sleep or from normal mode), we need to use ext clock from here */
+					configure_audio_extclk(dev);
 					break;
 				case 1:
 					auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);

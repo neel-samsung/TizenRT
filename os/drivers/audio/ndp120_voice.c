@@ -727,7 +727,8 @@ static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 
 		/* state changed from PM_SLEEP to PM_STANDBY, use i2s bclk */
 		pmstate = PM_STANDBY;
-		configure_audio_extclk(g_ndp120);
+		/* Instead of changing the clocksource here, do it in hpwork after finding the keyword that triggered the wakeup */
+		//configure_audio_extclk(g_ndp120);
 	}
 	break;
 	case(PM_SLEEP): {
