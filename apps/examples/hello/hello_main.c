@@ -56,11 +56,10 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <tinyara/pm/pm.h>
+
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-int count = 0;
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -68,8 +67,6 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	count++;
 	printf("Hello, World!!\n");
-	if (count > 1) pm_resume(PM_IDLE_DOMAIN);
 	return 0;
 }
