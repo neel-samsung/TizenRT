@@ -56,7 +56,18 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-
+#include <tinyara/config.h>
+#include <errno.h>
+#include <sched.h>
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <tinyara/pm/pm.h>
 /****************************************************************************
  * hello_main
  ****************************************************************************/
@@ -67,6 +78,47 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	int opt;
+	int ret;
+	int fd;
+
+
+	if (argc > 1 && argv[1][1] == 's') {
+		printf("Suspending PM \n");
+		fd = open("/dev/pm", O_RDONLY);
+		if (fd < 0) {
+			printf("Cannot open /dev/pm file with fd = %d\n", fd);
+		}
+		ret = ioctl(fd, PMIOC_SUSPEND, atoi(0));
+		printf("Ret is %d\n", ret);
+		close(fd);		
+	} else if(argc > 1 && argv[1][1] == 'r') {
+		printf("Resuming PM\n");
+		fd = open("/dev/pm", O_RDONLY);
+		if (fd < 0) {
+			printf("Cannot open /dev/pm file with fd = %d\n", fd);
+		}
+		ret = ioctl(fd, PMIOC_RESUME, atoi(0));
+		printf("Ret is %d\n", ret);
+		close(fd);
+	} else if( argc > 1 && argv[1][1] == 'c') {
+		fd = open("/dev/pm", O_RDONLY);
+		if (fd < 0) {
+			printf("Cannot open /dev/pm file with fd = %d\n", fd);
+		}
+		ret = ioctl(fd, PMIOC_TEST2, atoi(0));
+		printf("Ret is %d\n", ret);
+		close(fd);
+	} else if( argc > 1 && argv[1][1] == 't') {
+		fd = open("/dev/pm", O_RDONLY);
+		if (fd < 0) {
+			printf("Cannot open /dev/pm file with fd = %d\n", fd);
+		}
+		ret = ioctl(fd, PMIOC_TEST, atoi(argv[2]));
+		printf("Ret is %d\n", ret);
+		close(fd);
+	}
+	printf("Hello World!\n");
+	// lldbg("checking lldbg\n");
 	return 0;
 }

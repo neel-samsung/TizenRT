@@ -466,6 +466,8 @@
 #define PMIOC_DOMAIN_REGISTER	 _PMIOC(0x0005)
 #define PMIOC_TUNEFREQ           _PMIOC(0x0006)
 #define PMIOC_METRICS            _PMIOC(0x0007)
+#define PMIOC_TEST               _PMIOC(0x0008)
+#define PMIOC_TEST2               _PMIOC(0x0009)
 
 /* Cpuload driver ioctl definitions ************************/
 

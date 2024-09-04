@@ -159,7 +159,8 @@ struct i2s_dev_s;				/* Forward reference. Defined in include/tinyara ... */
 struct audio_lowerhalf_s;		/* Forward reference. Defined in tinyara/audio/audio.h */
 
 FAR struct audio_lowerhalf_s *syu645b_initialize(struct i2c_dev_s *i2c, FAR struct i2s_dev_s *i2s, FAR struct syu645b_lower_s *lower);
-
+void syu645b_control_reset_pin(bool active);
+void syu645b_control_check_pin();
 #undef EXTERN
 #ifdef __cplusplus
 }

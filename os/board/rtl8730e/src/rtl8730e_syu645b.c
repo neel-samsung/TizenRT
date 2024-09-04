@@ -75,7 +75,8 @@ struct rtl8730e_syu645b_audioinfo_s {
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
-static void syu645b_control_reset_pin(bool active);
+extern void syu645b_control_reset_pin(bool active);
+extern void syu645b_control_check_pin();
 static void syu645b_control_powerdown(bool powerdown);
 
 /****************************************************************************
@@ -95,12 +96,16 @@ static struct rtl8730e_syu645b_audioinfo_s g_syu645binfo = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static void syu645b_control_reset_pin(bool active)
+void syu645b_control_reset_pin(bool active)
 {
+	lldbg("syu645b pin set to %d, active:%d\n",gpio_read(&(g_syu645binfo.reset)), active);
 	gpio_write(&(g_syu645binfo.reset), !active);
+	lldbg("syu645b pin set to %d\n",gpio_read(&(g_syu645binfo.reset)));
 }
-
+void syu645b_control_check_pin()
+{
+	lldbg("syu645b pin set to %d\n",gpio_read(&(g_syu645binfo.reset)));
+}
 static void syu645b_control_powerdown(bool enter_powerdown)
 {
 	/* currently does nothing */

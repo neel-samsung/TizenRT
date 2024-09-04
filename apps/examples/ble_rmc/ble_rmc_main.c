@@ -898,6 +898,7 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 
 		if (argc == 3 && strncmp(argv[2], "start", 6) == 0) {
+			ble_server_set_adv_interval(32);
 			ret = ble_server_start_adv();
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_SERVER_TAG, "Fail to start adv [%d]\n", ret);

@@ -23,7 +23,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/pm/pm.h>
-
+#include <tinyara/audio/syu645b.h>
 #include <errno.h>
 #include <debug.h>
 #include <assert.h>
@@ -141,6 +141,16 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
         	ret = OK;
         	break;
 #endif
+	case PMIOC_TEST:
+		syu645b_control_reset_pin((int)arg);
+		lldbg("inside PM TEST IOCTL\n");
+		ret = OK;
+		break;
+	case PMIOC_TEST2:
+		syu645b_control_check_pin(1);
+		lldbg("inside PM TEST IOCTL\n");
+		ret = OK;
+		break;
 	default:
 		pmvdbg("Invalid command passed!\n");
 		break;
