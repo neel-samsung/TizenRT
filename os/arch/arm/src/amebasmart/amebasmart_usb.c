@@ -83,6 +83,7 @@ static _sema cdc_acm_attach_status_changed_sema;
 extern int cdc_acm_ready_flag;
 static uint8_t receive_data;
 static int received_flag = 0;
+static int usb_init = 0;
 /****************************************************************************
  * Private Type Definitions
  ****************************************************************************/
@@ -814,9 +815,13 @@ void usb_initialize(void)
 	if (ret != OK) {
 		udbg("usb register failed");
 	}
+	usb_init = 1;
 }
 
-
+bool check_usb_init(void)
+{
+	return usb_init;
+}
 /****************************************************************************
  * Name: usb_up_lowputc
  *

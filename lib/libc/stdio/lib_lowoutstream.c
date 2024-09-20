@@ -77,8 +77,14 @@ static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
 {
 	DEBUGASSERT(this);
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
-	if (up_putc(ch) != EOF) {
-		this->nput++;
+	if (check_usb_init()) {
+		if (usb_up_lowputc((uint8_t *)&ch, 1) != EOF) {
+			this->nput++;
+		}
+	} else {
+		if (up_putc(ch) != EOF) {
+			this->nput++;
+		}
 	}
 #endif
 }
