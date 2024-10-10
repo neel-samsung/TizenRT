@@ -110,6 +110,7 @@ void binary_manager_reset_board(int reboot_reason)
  ****************************************************************************/
 int binary_manager(int argc, char *argv[])
 {
+	lldbg("Binary Manager level: 1");
 	int nbytes;
 #if !defined(CONFIG_DISABLE_SIGNALS)
 	sigset_t sigset;
@@ -178,7 +179,7 @@ int binary_manager(int argc, char *argv[])
 		bmdbg("Fail to open mq, errno %d. EXIT!\n", errno);
 		return 0;
 	}
-
+	lldbg("binary manager, mq_open success\n");
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* Execute loading thread for load all binaries */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
@@ -191,13 +192,14 @@ int binary_manager(int argc, char *argv[])
 #endif
 
 	while (1) {
+					
 		bmvdbg("Wait for message\n");
 		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
 		if (nbytes <= 0) {
 			bmdbg("Fail to receive mq, ret %d, errno %d. retry!\n", nbytes, errno);
 			continue;
 		}
-
+		lldbg("message recieved inside bin manager : %d!! chk 1\n", request_msg);
 		bmvdbg("Received Request msg : cmd = %d\n", request_msg);
 		switch (request_msg.cmd) {
 #ifdef CONFIG_BINMGR_RECOVERY

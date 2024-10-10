@@ -125,6 +125,8 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 	binp->sections[BIN_DATA] = (uint32_t)uspace.data_start_in_ram;
 	binp->sizes[BIN_DATA] = uspace.data_end_in_ram - uspace.data_start_in_ram;
 
+	binp->data_backup = uspace.data_start_in_flash;
+	
 	/* all the required setup is done, lets just populate them in binp structure */
 
 	/* Allocate Heap... */
@@ -214,6 +216,27 @@ void elf_show_all_bin_section_addr(void)
 		}
 	}
 }
+
+#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
+void *elf_find_start_section_addr(struct binary_s *binp)
+{
+	int text_addr = (int)binp->sections[BIN_TEXT];
+	int ro_addr = (int)binp->sections[BIN_RO];
+	int data_addr = (int)binp->sections[BIN_DATA];
+
+	if (text_addr <= ro_addr) {
+		if (text_addr <= data_addr) {
+			return (void *)text_addr;
+		} else {
+			return (void *)data_addr;
+		}
+	} else if (ro_addr <= data_addr) {
+		return (void *)ro_addr;
+	} else {
+		return (void *)data_addr;
+	}
+}
+#endif
 
 void elf_save_bin_section_addr(struct binary_s *bin)
 {

@@ -613,11 +613,15 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
+		lldbg("inside arm assert, about to binary_manager_recover_userfault \n");
 		binary_manager_recover_userfault();
 	} else
 #endif
 	{
-		/* treat kernel fault */
-		arm_assert();
+		lldbg("inside arm assert for reboot \n");
+		/* treat kernel fault */		
+		binary_manager_recover_userfault();
+
+		// arm_assert();
 	}
 }

@@ -141,7 +141,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		/* Restore the exception context of the rtcb at the (new) head
 		 * of the g_readytorun task list.
 		 */
-
+		lldbg("we are in interrupt handler\n");
 		rtcb = this_task();
 
 		/* Restore rtcb data for context switching */
@@ -159,7 +159,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		/* Switch context to the context of the task at the head of the
 		 * ready to run list.
 		 */
-
+		lldbg("we will need to perform the user context switch\n");
 		struct tcb_s *nexttcb = this_task();
 #ifdef CONFIG_TASK_SCHED_HISTORY
 		/* Save the task name which will be scheduled */
