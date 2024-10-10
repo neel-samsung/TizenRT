@@ -152,7 +152,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		up_restoretask(rtcb);
 
 		/* Then switch contexts */
-
+		lldbg("we are in interrupt handler\n");
 		arm_restorestate(rtcb->xcp.regs);
 	}
 
@@ -162,7 +162,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		/* Switch context to the context of the task at the head of the
 		 * ready to run list.
 		 */
-
+		lldbg("we are not in interrupt handler, So, switch the context\n");
 		struct tcb_s *nexttcb = this_task();
 #ifdef CONFIG_TASK_SCHED_HISTORY
 		/* Save the task name which will be scheduled */

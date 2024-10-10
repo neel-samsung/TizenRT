@@ -118,6 +118,7 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 
 	retry_count = 0;
 	while (retry_count < BINMGR_LOADING_TRYCNT) {
+		lldbg("Loading binary bin_idx: %d, path: %s\n", bin_idx, path);
 		ret = load_binary(bin_idx, path, load_attr);
 		if (ret >= 0) {
 			/* Set the data in table from header */
@@ -183,11 +184,14 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	binp = BIN_LOADINFO(bin_idx);
 	if (binp) {
+		lldbg("Reload scenario: reload: %d\n", binp->data_backup);
 		bin_count = 1;
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx))));
 	} else
 #endif
 	{
+		lldbg("Load scenario: load:\n");
+		lldbg("inside else while loading binary\n", bin_idx);
 		bin_count = BIN_COUNT(bin_idx);
 	}
 
@@ -564,7 +568,7 @@ static int reloading_thread(int argc, char *argv[])
 	 * to clear used resources normally.
 	 */
 	load_cmd = LOADCMD_LOAD_ALL;
-
+	lldbg("Reloading Thread for all reload\n");
 	/* Unload all user binaries and common binary */
 	for (bidx = 0; bidx <= bin_count; bidx++) {
 		ret = binary_manager_terminate_binary(bidx);
@@ -758,6 +762,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 		break;
 #ifdef CONFIG_BINMGR_RECOVERY
 	case LOADCMD_RELOAD:
+		lldbg("Reloading Thread\n");
 		loader_func = reloading_thread;
 		break;
 #endif

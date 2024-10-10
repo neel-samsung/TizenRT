@@ -44,6 +44,7 @@ static void *assert_thread(void *index)
 	}
 
 	type = getpid() % 3;
+	printf("type: %d\n", type);
 	if (type == 0) {
 		/* PANIC */
 		printf("[%d] %dth thread, PANIC!\n", getpid(), (int)index);

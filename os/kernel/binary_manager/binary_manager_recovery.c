@@ -161,19 +161,22 @@ static int binary_manager_deactivate_binary(int bin_idx)
 static void binary_manager_unblock_fault_message_sender(int bin_idx)
 {
 	struct faultmsg_s *msg;
-
+	lldbg("inside fault msg sender chk 1\n");
 	/* Check there are a fault message sender and available fault message */
 	if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
+		lldbg("inside fault msg sender chk 2\n");
 		msg->binidx = bin_idx;
 		sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
-
+	lldbg("inside fault msg sender chk 3\n");
 		/* Unblock fault message sender */
 		if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
+			lldbg("inside fault msg sender chk 4\n");
 			up_unblock_task_without_savereg(g_faultmsg_sender);
 		}
+		lldbg("inside fault msg sender chk 5\n");
 		return;
 	}
-
+	lldbg("inside fault msg sender chk 6\n");
 	/* Board reset on failure of recovery */
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
@@ -191,7 +194,7 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
 void binary_manager_deactivate_rtthreads(int bin_idx)
 {
 	struct tcb_s *ptr;
-
+	lldbg("binary_manager_deactivate_rtthreads\n");
 	if (bin_idx > 0) {
 		ptr = BIN_RTLIST(bin_idx);
 		while (ptr) {
@@ -202,6 +205,8 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
 			ptr = ptr->bin_flink;
 		}
 	}
+	lldbg("end of binary_manager_deactivate_rtthreads\n");
+
 }
 
 
@@ -217,23 +222,29 @@ void binary_manager_recover_userfault(void)
 	int bin_idx;
 	/* Get a tcb of fault thread for fault handling */
 	struct tcb_s *tcb = this_task();
+		lldbg("inside binary_manager_recover_userfault pid: %d\n",tcb->pid);
 #ifndef CONFIG_BINMGR_RELOAD_REBOOT // Board Reset for binary reloading
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	/* If a fault happens in common binary or user binaries, it needs to reload all user binaries */
+	lldbg("inside binary_manager_recover_userfault \n");
 	int bin_count = binary_manager_get_ucount();
 
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		lldbg("Deactivate binary %d\n", bin_idx);
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 		binary_manager_deactivate_rtthreads(bin_idx);
 	}
+	lldbg("send fault message\n");
 	/* Send fault message and Unblock fault message sender */
 	bin_idx = tcb->group->tg_binidx;
 	return binary_manager_unblock_fault_message_sender(bin_idx);
 #else
 	if (tcb != NULL && tcb->group != NULL) {
 		/* Exclude realtime task/pthreads from scheduling */
+
 		bin_idx = tcb->group->tg_binidx;
 		binary_manager_deactivate_rtthreads(bin_idx);
+			lldbg("send fault message\n");
 
 		/* Send fault message and Unblock fault message sender */
 		return binary_manager_unblock_fault_message_sender(bin_idx);
@@ -280,17 +291,24 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 	}
 
 	while (1) {
+		lldbg("message recieved!! chk 1\n");
 		/* Wait for fault messages and handle it */
 		up_block_task(this_task(), TSTATE_WAIT_FIN);
+			lldbg("task just got unblocked!! chk 1\n");
 		while (!sq_empty(&g_faultmsg_list)) {
+			lldbg("message recieved!! chk 1\n");
 			msg = (struct faultmsg_s *)sq_remfirst(&g_faultmsg_list);
 			request_msg.cmd = BINMGR_FAULT;
 			request_msg.requester_pid = msg->binidx;
+						lldbg("message recieved!! chk 2\n");
 			bmllvdbg("Send fault message, bin id %d\n", request_msg.requester_pid);
 			ret = mq_send(binary_manager_get_mqfd(), (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
+						lldbg("message recieved!! chk 3\n");
 			ASSERT(ret == OK);
 			sq_addlast((FAR sq_entry_t *)msg, (FAR sq_queue_t *)&g_freemsg_list);
+						lldbg("message recieved!! chk 4\n");
 		}
+		lldbg("outside the while loop binary_manager_faultmsg_sender !! chk 1\n");
 	}
 
 	return 0;

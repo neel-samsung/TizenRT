@@ -191,13 +191,14 @@ int binary_manager(int argc, char *argv[])
 #endif
 
 	while (1) {
+					
 		bmvdbg("Wait for message\n");
 		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
 		if (nbytes <= 0) {
 			bmdbg("Fail to receive mq, ret %d, errno %d. retry!\n", nbytes, errno);
 			continue;
 		}
-
+		lldbg("message recieved inside bin manager : %d!! chk 1\n", request_msg);
 		bmvdbg("Received Request msg : cmd = %d\n", request_msg);
 		switch (request_msg.cmd) {
 #ifdef CONFIG_BINMGR_RECOVERY
