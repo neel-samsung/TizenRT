@@ -314,6 +314,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 			request_msg.cmd = BINMGR_FAULT;
 			request_msg.requester_pid = msg->binidx;
 						lldbg("message recieved!! chk 2\n");
+			up_cpu_resume(1);
 			bmllvdbg("Send fault message, bin id %d\n", request_msg.requester_pid);
 			ret = mq_send(binary_manager_get_mqfd(), (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
 						lldbg("message recieved!! chk 3\n");

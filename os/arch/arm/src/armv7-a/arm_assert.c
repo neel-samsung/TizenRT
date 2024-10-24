@@ -568,7 +568,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	reboot_reason_write_user_intended();
 #endif
-
+	irqstate_t flags = enter_critical_section();
 	abort_mode = true;
 
 	uint32_t asserted_location;
@@ -584,8 +584,17 @@ void up_assert(const uint8_t *filename, int lineno)
 	} else {
 		asserted_location = (uint32_t)kernel_assert_location;
 	}
-
-	irqstate_t flags = irqsave();
+	int me = sched_getcpu();
+	for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (cpu != me) {
+			/* Pause the CPU */
+			up_cpu_pause(cpu);
+			lldbg("CPU paused: %d\n", cpu);
+			/* Wait while the pause request is pending */
+			while (up_cpu_pausereq(cpu)) {
+			}
+		}
+	}
 #ifdef CONFIG_SECURITY_LEVEL
 	lldbg_noarg("security level: %d\n", get_security_level());
 #endif
@@ -608,7 +617,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg_noarg("\n");
 #endif
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
