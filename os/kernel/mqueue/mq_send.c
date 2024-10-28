@@ -134,7 +134,7 @@
  * Assumptions/restrictions:
  *
  ****************************************************************************/
-
+int ggg=1;
 int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 {
 	FAR struct mqueue_inode_s *msgq;
@@ -164,7 +164,7 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 	 * - After successfully waiting for the message queue to become
 	 *   non-FULL.  This would fail with EAGAIN, EINTR, or ETIMEOUT.
 	 */
-
+	lldbg("Check point 1\n");
 	saved_state = enter_critical_section();
 	if (up_interrupt_context() ||	/* In an interrupt handler */
 		msgq->nmsgs < msgq->maxmsgs ||	/* OR Message queue not full */
@@ -180,7 +180,7 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 		 * - The message queue is full AND
 		 * - When we tried waiting, the wait was unsuccessful.
 		 */
-
+		lldbg("We are not in an interrupt handler ANDWe cannot send the message (and didn't even try to allocate it)");
 		leave_critical_section(saved_state);
 	}
 
@@ -190,14 +190,20 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 	 * either because we cannot send the message (and didn't bother trying
 	 * to allocate it) or because the allocation failed.
 	 */
-
+	lldbg("Check point 2\n");
 	if (mqmsg) {
 		/* Yes, perform the message send. */
 
 		ret = mq_dosend(mqdes, mqmsg, msg, msglen, prio);
 	}
+	lldbg("Check point 3\n");
+	if(ggg==1) sched_unlock();
+	else 	sched_unlock1();
+	ggg=0;
 
-	sched_unlock();
+
+	lldbg("Check point 3.5\n");
 	leave_cancellation_point();
+	lldbg("Check point 4\n");
 	return ret;
 }

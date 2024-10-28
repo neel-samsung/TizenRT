@@ -121,20 +121,21 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 	 * g_readytorun task list
 	 */
 
-	if (sched_addprioritized(tcb, (FAR dq_queue_t *)&g_readytorun)) {
-		/* The new btcb was added at the head of the ready-to-run list. It
-		 * is now to new active task!
-		 */
+	// if (sched_addprioritized(tcb, (FAR dq_queue_t *)&g_readytorun)) {
+	// 	/* The new btcb was added at the head of the ready-to-run list. It
+	// 	 * is now to new active task!
+	// 	 */
+	// 	lldbg("New running task: %d old task: %d\n",tcb->pid,tcb->flink->pid);
+	// 	ASSERT(tcb->flink != NULL);
+	// 	tcb->task_state = TSTATE_TASK_RUNNING;
+	// 	tcb->flink->task_state = TSTATE_TASK_READYTORUN;
 
-		ASSERT(tcb->flink != NULL);
-		tcb->task_state = TSTATE_TASK_RUNNING;
-		tcb->flink->task_state = TSTATE_TASK_READYTORUN;
-
-	} else {
-		/* The new btcb was added in the middle of the ready-to-run list */
-
-		tcb->task_state = TSTATE_TASK_READYTORUN;
-	}
+	// } else {
+	// 	/* The new btcb was added in the middle of the ready-to-run list */
+	// 	tcb->task_state = TSTATE_TASK_READYTORUN;
+	// 	lldbg("New running task: %d old task: %d, tcb state: %d\n",tcb->pid,tcb->flink->pid, tcb->task_state);
+	// }
+	sched_addreadytorun(tcb);
 
 	/*
 	 * Are we in an interrupt handler?
@@ -152,7 +153,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		up_restoretask(rtcb);
 
 		/* Then switch contexts */
-
+		lldbg("we are in interrupt handler\n");
 		arm_restorestate(rtcb->xcp.regs);
 	}
 
@@ -162,7 +163,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		/* Switch context to the context of the task at the head of the
 		 * ready to run list.
 		 */
-
+		lldbg("we are not in interrupt handler, So, switch the context\n");
 		struct tcb_s *nexttcb = this_task();
 #ifdef CONFIG_TASK_SCHED_HISTORY
 		/* Save the task name which will be scheduled */

@@ -36,10 +36,10 @@
 
 #ifdef CONFIG_STACK_COLORATION
 #if CONFIG_TASK_NAME_SIZE > 0
-#define TASKDUMP_ARGS_FORMAT "%*s | %5s | %4s | %7s / %7s | %16s | %8s | %10s\n"
-#define TASKDUMP_FORMAT "%*s | %5d | %4d | %7lu / %7lu | %16p | %8p | %10u\n"
-#define TASKDUMP_VALUE  CONFIG_TASK_NAME_SIZE, tcb->name, tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb, tcb->task_state
-#define TASKDUMP_ARGS  CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK",  "STACK ALLOC ADDR", "TCB ADDR", "TASK STATE"
+#define TASKDUMP_ARGS_FORMAT "%*s | %5s | %4s | %7s / %7s | %16s | %8s | %10s | %10s\n"
+#define TASKDUMP_FORMAT "%*s | %5d | %4d | %7lu / %7lu | %16p | %8p | %10u | %10u\n"
+#define TASKDUMP_VALUE  CONFIG_TASK_NAME_SIZE, tcb->name, tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb, tcb->task_state, tcb->cpu
+#define TASKDUMP_ARGS  CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK",  "STACK ALLOC ADDR", "TCB ADDR", "TASK STATE", "CPU ID"
 #else
 #define TASKDUMP_ARGS_FORMAT "%5s | %4s | %7s / %7s | %16s | %8s | %10s\n"
 #define TASKDUMP_FORMAT "%5d | %4d | %7lu / %7lu | %16p | %8p | %10u\n"

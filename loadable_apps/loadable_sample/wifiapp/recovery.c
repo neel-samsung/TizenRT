@@ -44,6 +44,7 @@ static void *assert_thread(void *index)
 	}
 
 	type = getpid() % 3;
+	printf("type: %d\n", type);
 	if (type == 0) {
 		/* PANIC */
 		printf("[%d] %dth thread, PANIC!\n", getpid(), (int)index);
@@ -64,6 +65,9 @@ static void *assert_thread(void *index)
 		*(obj.addr) = 0xdeadbeef;
 	} else {
 		/* Access another binary 'micom' address */
+		PANIC();
+		// int *nn = NULL;
+		// printf("%d",*nn);
 		obj.type = MEM_PROTECTTEST_APP_ADDR;
 		ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 		if (ret < 0) {

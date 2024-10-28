@@ -105,6 +105,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	 * we are in a reload scenario.
 	 */
 	if (bin) {
+		lldbg(" reload scenario: Sbin->data_backup: %d\n", bin->data_backup);
 		if (!bin->data_backup) {
 			errcode = -EINVAL;
 			berr("ERROR: Failed to find copy of data section from previous load\n");
@@ -117,6 +118,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	} else {
 #endif
 
+		lldbg(" load scenario: Sbin->data_backup:\n");
 		/* Allocate the load information */
 
 		bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
@@ -170,6 +172,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		}
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		lldbg("bin->data_backup: %d\n", bin->data_backup);
 		if (!bin->data_backup) {
 			errcode = -EINVAL;
 			berr("ERROR: data section backup address not initialized\n");

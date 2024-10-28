@@ -118,6 +118,7 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 
 	retry_count = 0;
 	while (retry_count < BINMGR_LOADING_TRYCNT) {
+		lldbg("Loading binary bin_idx: %d, path: %s\n", bin_idx, path);
 		ret = load_binary(bin_idx, path, load_attr);
 		if (ret >= 0) {
 			/* Set the data in table from header */
@@ -183,11 +184,14 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	binp = BIN_LOADINFO(bin_idx);
 	if (binp) {
+		lldbg("Reload scenario: reload: %d\n", binp->data_backup);
 		bin_count = 1;
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx))));
 	} else
 #endif
 	{
+		lldbg("Load scenario: load:\n");
+		lldbg("inside else while loading binary\n", bin_idx);
 		bin_count = BIN_COUNT(bin_idx);
 	}
 
@@ -335,7 +339,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp = NULL;
 #endif
-
+		lldbg("check stage 1\n");
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin_idx == BM_CMNLIB_IDX) {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -363,7 +367,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		return BINMGR_OK;
 	}
 #endif
-
+	lldbg("check stage 2\n");
 	need_recovery = false;
 
 	binid = BIN_ID(bin_idx);
@@ -390,6 +394,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		/* Release all kernel semaphores held by the threads in binary */
 		binary_manager_release_binary_sem(bin_idx);
 	}
+	lldbg("check stage 3\n");
 
 	/* Terminate all children created by a binary */
 	ntcb = tcb = BIN_RTLIST(bin_idx);
@@ -421,7 +426,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		}
 		tcb = ntcb;
 	}
-
+	lldbg("check stage 4\n");
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (state == BINARY_FAULT) {
 		binp = BIN_LOADINFO(bin_idx);
@@ -442,6 +447,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	BIN_STATE(bin_idx) = BINARY_INACTIVE;
 	BIN_RTLIST(bin_idx) = NULL;
 	BIN_NRTLIST(bin_idx) = NULL;
+	lldbg("check stage 5\n");
 
 	/* Notify 'Unloaded' state to other binaries */
 	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
@@ -564,7 +570,7 @@ static int reloading_thread(int argc, char *argv[])
 	 * to clear used resources normally.
 	 */
 	load_cmd = LOADCMD_LOAD_ALL;
-
+	lldbg("Reloading Thread for all reload\n");
 	/* Unload all user binaries and common binary */
 	for (bidx = 0; bidx <= bin_count; bidx++) {
 		ret = binary_manager_terminate_binary(bidx);
@@ -592,6 +598,7 @@ static int reloading_thread(int argc, char *argv[])
 
 	/* Deinitialize modules in kernel */
 	binary_manager_deinit_modules();
+	lldbg("check stage 1\n");
 
 	/* Create a loader to reload binary */
 	ret = binary_manager_execute_loader(load_cmd, bin_idx);
@@ -599,6 +606,7 @@ static int reloading_thread(int argc, char *argv[])
 		bmdbg("Fail to execute loader to reload binary, %d\n", ret);
 		return BINMGR_OPERATION_FAIL;
 	}
+	lldbg("check stage 2\n");
 
 	return BINMGR_OK;
 }
@@ -758,6 +766,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 		break;
 #ifdef CONFIG_BINMGR_RECOVERY
 	case LOADCMD_RELOAD:
+		lldbg("Reloading Thread\n");
 		loader_func = reloading_thread;
 		break;
 #endif

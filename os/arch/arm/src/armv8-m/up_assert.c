@@ -643,6 +643,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
+		lldbg("inside upassert, about to binary_manager_recover_userfault \n");
 		binary_manager_recover_userfault();
 	} else
 #endif

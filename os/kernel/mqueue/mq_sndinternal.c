@@ -367,7 +367,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 
 	sched_lock();
 	msgq = mqdes->msgq;
-
+	lldbg("MQ do send 1\n");
 	/* Construct the message header info */
 
 	mqmsg->priority = prio;
@@ -378,6 +378,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 	memcpy((void *)mqmsg->mail, (FAR const void *)msg, msglen);
 
 	/* Insert the new message in the message queue */
+	lldbg("MQ do send 2\n");
 
 	saved_state = enter_critical_section();
 
@@ -386,6 +387,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 	 */
 
 	for (prev = NULL, next = (FAR struct mqueue_msg_s *)msgq->msglist.head; next && prio <= next->priority; prev = next, next = next->next) ;
+	lldbg("MQ do send 3\n");
 
 	/* Add the message at the right place */
 
@@ -396,6 +398,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 	}
 
 	/* Increment the count of messages in the queue */
+	lldbg("MQ do send 4\n");
 
 	msgq->nmsgs++;
 	leave_critical_section(saved_state);
@@ -424,6 +427,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 		msgq->ntmqdes = NULL;
 
 		/* Queue the signal -- What if this returns an error? */
+	lldbg("MQ do send 5\n");
 
 #ifdef CONFIG_CAN_PASS_STRUCTS
 		sig_mqnotempty(pid, signo, value);
@@ -434,6 +438,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 #endif
 
 	/* Check if any tasks are waiting for the MQ not empty event. */
+	lldbg("MQ do send 5\n");
 
 	saved_state = enter_critical_section();
 	if (msgq->nwaitnotempty > 0) {
@@ -453,6 +458,7 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 		msgq->nwaitnotempty--;
 		up_unblock_task(btcb);
 	}
+	lldbg("MQ do send 6\n");
 
 	leave_critical_section(saved_state);
 	sched_unlock();

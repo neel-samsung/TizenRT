@@ -74,7 +74,7 @@ void up_release_pending(void)
 	svdbg("From TCB=%p\n", rtcb);
 
 	/* Merge the g_pendingtasks list into the ready-to-run task list */
-
+	lldbg("check");
 	if (sched_mergepending()) {
 		/* The currently active task has changed!  We will need to
 		 * switch contexts.
