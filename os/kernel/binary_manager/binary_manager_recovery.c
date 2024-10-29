@@ -161,7 +161,7 @@ static int binary_manager_deactivate_binary(int bin_idx)
 static void binary_manager_unblock_fault_message_sender(int bin_idx)
 {
 	struct faultmsg_s *msg;
-
+	irqstate_t flags;
 	/* Check there are a fault message sender and available fault message */
 	if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
 		msg->binidx = bin_idx;
@@ -169,7 +169,9 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
 
 		/* Unblock fault message sender */
 		if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
+			flags = enter_critical_section();
 			up_unblock_task_without_savereg(g_faultmsg_sender);
+			leave_critical_section(flags);
 		}
 		return;
 	}
@@ -272,7 +274,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 	int ret;
 	faultmsg_t *msg;
 	binmgr_request_t request_msg;
-
+	irqstate_t flags;
 	/* Initialize pre-allocated fault messages */
 
 	for (idx = 0; idx < FAULTMSG_COUNT; idx++) {
@@ -281,7 +283,10 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 
 	while (1) {
 		/* Wait for fault messages and handle it */
+		flags = enter_critical_section();
 		up_block_task(this_task(), TSTATE_WAIT_FIN);
+		leave_critical_section(flags);
+
 		while (!sq_empty(&g_faultmsg_list)) {
 			msg = (struct faultmsg_s *)sq_remfirst(&g_faultmsg_list);
 			request_msg.cmd = BINMGR_FAULT;

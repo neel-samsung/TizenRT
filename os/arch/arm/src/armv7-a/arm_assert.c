@@ -643,7 +643,8 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	{
 		/* treat kernel fault */
-		arm_assert();
+		/* It is showing asserted location to be in kernel space regardless of app crash (TODO)*/
+		binary_manager_recover_userfault();
 	}
 	leave_critical_section(flags);
 }
