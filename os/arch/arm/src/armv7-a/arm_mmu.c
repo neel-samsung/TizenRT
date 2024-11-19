@@ -393,6 +393,7 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
 	memset(addr, 0, CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE);
 
 	if (app_id == 0) {
+
 		// Reset the L2 page entries in L1 page table
 		addr = (uint32_t *) PGTABLE_BASE_VADDR;
 		for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
@@ -402,14 +403,18 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
 				addr[i] |= MMU_MEMFLAGS;
 			}
 		}
+
 	} else {
 		// Clear L1 page table
 		addr = (uint32_t *)(PGTABLE_BASE_VADDR + (app_id * L1_PGTBL_SIZE));
 		memset(addr, 0, L1_PGTBL_SIZE);
 	}
-
+		sleep(2);
+lldbg("Freeing\n");
 	cp15_wrttb((uint32_t)(mmu_get_os_l1_pgtbl()) | TTBR0_RGN_WBWA | TTBR0_IRGN0);
 	cp15_invalidate_tlbs();
+					sleep(10);
+lldbg("after sleep\n");
 }
 
 /****************************************************************************

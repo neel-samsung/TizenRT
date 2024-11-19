@@ -162,7 +162,8 @@ int unload_module(FAR struct binary_s *binp)
 		binfmt_freeargv(binp);
 
 		/* Free allocated address spaces */
-
+		// sleep(10);
+		lldbg("reload value: %d\n", binp->reload);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		if (binp->reload != true) {
 		/* If reload is true, reserved loading section information is used for reloading, so there is no need to free each loading section's memory.
@@ -195,6 +196,8 @@ int unload_module(FAR struct binary_s *binp)
 			}
 		}
 #else
+
+
 		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
 		binfo("Freeing : %p\n", binp->sections[0]);
 		kmm_free((FAR void *)binp->sections[0]);
@@ -206,6 +209,7 @@ int unload_module(FAR struct binary_s *binp)
 		 * happen automatically when the task exits.
 		 */
 	}
+
 
 	return OK;
 }

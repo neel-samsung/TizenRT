@@ -291,6 +291,8 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 			msg = (struct faultmsg_s *)sq_remfirst(&g_faultmsg_list);
 			request_msg.cmd = BINMGR_FAULT;
 			request_msg.requester_pid = msg->binidx;
+			lldbg("Task just got unblocked.\nTasklist 1\n");
+			task_show_alivetask_list();
 			bmllvdbg("Send fault message, bin id %d\n", request_msg.requester_pid);
 			ret = mq_send(binary_manager_get_mqfd(), (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
 			ASSERT(ret == OK);

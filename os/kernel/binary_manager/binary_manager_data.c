@@ -405,10 +405,11 @@ bool binary_manager_scan_ubin_all(void)
 	char devpath[BINARY_PATH_LEN];
 
 	is_found = false;
-
+	lldbg("check 1\n");
 #ifdef CONFIG_USE_BP
 	bp_data = binary_manager_get_bpdata();
 	/* Update user binary data based on bootparam */
+	lldbg("check 2\n");
 	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
 		bin_idx = binary_manager_get_index_with_name(bp_data->app_data[bp_app_idx].name);
 		if (bin_idx < 0) {
@@ -419,6 +420,7 @@ bool binary_manager_scan_ubin_all(void)
 		part_idx = bp_data->app_data[bp_app_idx].useidx;
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
+		lldbg("check 3\n");
 		if (bin_idx == BM_CMNLIB_IDX) {
 			ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);			
 			version = common_header_data.version;
@@ -428,6 +430,7 @@ bool binary_manager_scan_ubin_all(void)
 			ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, false);			
 			version = user_header_data.bin_ver;
 		}
+				lldbg("check 4\n");
 		if (ret == OK) {
 			/* Return true it there is at least one valid binary */
 			BIN_USEIDX(bin_idx) = part_idx;
@@ -444,6 +447,7 @@ bool binary_manager_scan_ubin_all(void)
 	}
 #else
 	uint32_t latest_ver = 0;
+		
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	/* Scan Common binary on its own partitions */
@@ -466,6 +470,7 @@ bool binary_manager_scan_ubin_all(void)
 	}
 #endif
 	/* Scan User binaries based on their own partitions */
+		lldbg("check 3\n");
 
 	for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
 		latest_ver = 0;
@@ -487,6 +492,7 @@ bool binary_manager_scan_ubin_all(void)
 		}
 	}
 #endif
+		lldbg("check 4, found: %d\n", is_found);
 
 	return is_found;
 }

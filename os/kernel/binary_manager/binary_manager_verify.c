@@ -111,11 +111,12 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	uint32_t crc_hash;
 	uint32_t crc_bufsize = 0;
 	int header_size = 0;
-
+		lldbg("check 1\n");
 	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !header_data) {
 		bmdbg("Invalid parameter, type %d\n", type);
 		return BINMGR_INVALID_PARAM;
 	}
+		lldbg("inner check 2\n");
 
 	if (type == BINARY_KERNEL) {
 		header_size = sizeof(kernel_binary_header_t);
@@ -126,15 +127,20 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	} else if (type == BINARY_RESOURCE) {
 		header_size = sizeof(resource_binary_header_t);
 	}
+			lldbg("inner check 3\n");
 
 	memset(header_data, 0, header_size);
 	crc_buffer = NULL;
+		// sleep(5);
+		lldbg("inner check 4\n");
 
 	fd = open(devpath, O_RDONLY);
+	lldbg("inner inner check 4: %d\n", fd);;
 	if (fd < 0) {
 		bmdbg("Fail to open %s: errno %d\n", devpath, errno);
 		return BINMGR_OPERATION_FAIL;
 	}
+		lldbg("check 2\n");
 
 #ifdef CONFIG_BINARY_SIGNING
 	if (type == BINARY_USERAPP || type == BINARY_COMMON) {
@@ -161,6 +167,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		ret = BINMGR_NOT_FOUND;
 		goto errout_with_fd;
 	}
+		lldbg("check 3\n");
 
 	if (crc_check) {
 		if (type == BINARY_KERNEL) {
@@ -188,6 +195,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 			ret = BINMGR_OUT_OF_MEMORY;
 			goto errout_with_fd;
 		}
+				lldbg("check 4\n");
 		/* Calculate checksum and Verify it */
 		calculate_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_size - CHECKSUM_SIZE, calculate_crc);
 		while (bin_size > 0) {
@@ -210,7 +218,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		kmm_free(crc_buffer);
 	}
 	close(fd);
-
+	lldbg("return 0\n");
 	return BINMGR_OK;
 
 errout_with_fd:

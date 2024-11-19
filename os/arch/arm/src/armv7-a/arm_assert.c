@@ -587,19 +587,21 @@ void up_assert(const uint8_t *filename, int lineno)
 	 * invalid at this point. If we dont pause other cpu's then it might lead
 	 * to multiple asserts.
 	 */
-	if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
+	// if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		int me = sched_getcpu();
 		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+			lldbg("cpu: %d", cpu);
 			if (cpu != me) {
 				/* Pause the CPU */
 				up_cpu_pause(cpu);
 				/* Wait while the pause request is pending */
 				while (up_cpu_pausereq(cpu)) {
 				}
+				lldbg("paused cpu: %d", cpu);
 			}
 
 		}
-	}
+	// }
 #endif
 
 	struct tcb_s *fault_tcb = this_task();

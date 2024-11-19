@@ -101,6 +101,10 @@ bool up_cpu_pausereq(int cpu)
   return spin_is_locked(&g_cpu_paused[cpu]);
 }
 
+bool up_is_cpu_paused(int cpu)
+{
+	return spin_is_locked(&g_cpu_resumed[cpu]);
+}
 /****************************************************************************
  * Name: up_cpu_paused_save
  *
@@ -301,6 +305,9 @@ int arm_pause_handler(int irq, void *context, void *arg)
 int up_cpu_pause(int cpu)
 {
   DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+  if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu)) {
+		return OK;
+	}
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify of the pause event */
@@ -362,6 +369,7 @@ int up_cpu_pause(int cpu)
 
 int up_cpu_resume(int cpu)
 {
+	// lldbg("resumed CPU: %d", cpu);
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION

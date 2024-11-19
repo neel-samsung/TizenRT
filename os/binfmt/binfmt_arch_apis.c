@@ -119,8 +119,11 @@ void binfmt_arch_deinit_mem_protect(struct binary_s *binp)
 #else
 		up_mpu_disable_region(&binp->cmn_mpu_regs[0]);
 #endif
+
 #elif defined(CONFIG_ARCH_USE_MMU)
+
 		mmu_clear_app_pgtbl(binp->binary_idx);
+
 #endif
 	}
 #endif

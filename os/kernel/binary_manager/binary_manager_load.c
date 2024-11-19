@@ -41,6 +41,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/kthread.h>
+#include <tinyara/arch.h>
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
 #endif
@@ -335,7 +336,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp = NULL;
 #endif
-
+	
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin_idx == BM_CMNLIB_IDX) {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -345,6 +346,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 			binp->reload = true;
 		}
 #endif
+	
 		ret = unload_module(g_lib_binp);
 		if (ret != OK) {
 			bmdbg("Fail to unload common binary %d\n", ret);
@@ -358,11 +360,15 @@ static int binary_manager_terminate_binary(int bin_idx)
 #else
 		g_lib_binp = NULL;
 #endif
+sleep(10);
+	lldbg("check 1\n");
 		BIN_STATE(bin_idx) = BINARY_INACTIVE;
 		bmvdbg("Unload common binary Done!!\n");
 		return BINMGR_OK;
 	}
 #endif
+	sleep(5);
+	lldbg("check 2\n");
 
 	need_recovery = false;
 
@@ -421,6 +427,8 @@ static int binary_manager_terminate_binary(int bin_idx)
 		}
 		tcb = ntcb;
 	}
+	sleep(15);
+	lldbg("check 3\n");
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (state == BINARY_FAULT) {
@@ -445,7 +453,6 @@ static int binary_manager_terminate_binary(int bin_idx)
 
 	/* Notify 'Unloaded' state to other binaries */
 	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
-
 	return OK;
 }
 
@@ -458,11 +465,14 @@ static int binary_manager_terminate_binary(int bin_idx)
  ****************************************************************************/
 static int loading_thread(int argc, char *argv[])
 {
+	lldbg("Inside loading thread\n");
 	if (argc <= 1) {
 		bmdbg("Invalid arguments for loading, argc %d\n", argc);
 		return ERROR;
 	}
-
+	lldbg("CPU: %d", up_is_cpu_paused(1));
+	lldbg("check cpu tcb list\n");
+	task_show_alivetask_list();
 	/* argv[1] binary index for loading */
 	return binary_manager_load((int)atoi(argv[1]));
 }
@@ -480,10 +490,12 @@ static int loadingall_thread(int argc, char *argv[])
 	int bin_idx;
 	int load_cnt;
 	uint32_t bin_count;
-
+	lldbg("Loading all thread\n");
+			// sleep(5);
 	if (!binary_manager_scan_ubin_all()) {
 		return BINMGR_OPERATION_FAIL;
 	}
+	lldbg("Loading all thread 2\n");
 
 #ifdef CONFIG_RESOURCE_FS
 	ret = binary_manager_mount_resource();
@@ -493,6 +505,7 @@ static int loadingall_thread(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
+	lldbg("loading Common binary\n");
 	ret = binary_manager_load(BM_CMNLIB_IDX);
 	if (ret < 0) {
 		return BINMGR_OPERATION_FAIL;
@@ -501,6 +514,7 @@ static int loadingall_thread(int argc, char *argv[])
 
 	load_cnt = 0;
 	bin_count = binary_manager_get_ucount();
+	lldbg("loading app binary\n");
 
 	/* Load the binaries with high priority directly */
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
@@ -573,6 +587,9 @@ static int reloading_thread(int argc, char *argv[])
 		}
 		bmvdbg("Terminated binary %d\n", bidx);
 	}
+	lldbg("Termination successful\n");
+		sleep(10);
+
 #else
 	load_cmd = LOADCMD_LOAD;
 
@@ -592,13 +609,21 @@ static int reloading_thread(int argc, char *argv[])
 
 	/* Deinitialize modules in kernel */
 	binary_manager_deinit_modules();
-
+	lldbg("CPU: %d\n", up_is_cpu_paused(1));
+	lldbg("Tasklist 2\n");
+	task_show_alivetask_list();
 	/* Create a loader to reload binary */
 	ret = binary_manager_execute_loader(load_cmd, bin_idx);
 	if (ret != OK) {
 		bmdbg("Fail to execute loader to reload binary, %d\n", ret);
 		return BINMGR_OPERATION_FAIL;
 	}
+	sleep(10);
+	lldbg("CPU: %d\n", up_is_cpu_paused(1));
+	lldbg("Tasklist 3\n");
+	task_show_alivetask_list();
+	sleep(10);
+	lldbg("load: %d\n",load_cmd);
 
 	return BINMGR_OK;
 }
@@ -728,6 +753,7 @@ void binary_manager_release_binary_sem(int bin_idx)
  ****************************************************************************/
 int binary_manager_execute_loader(int cmd, int bin_idx)
 {
+	lldbg("load: %d, bin_idx: %d\n", cmd, bin_idx);
 	int ret;
 	uint8_t loader_priority;
 	main_t loader_func;
