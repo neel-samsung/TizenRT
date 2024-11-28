@@ -160,14 +160,14 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	mBufSize = get_user_output_frames_to_byte(get_output_frame_count());
+	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
 	}
 
-	medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
+	meddbg("MediaPlayer mBuffer size : %d\n", mBufSize);
 
 	mBuffer = new unsigned char[mBufSize];
 	if (!mBuffer) {
@@ -250,12 +250,6 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	if (mBuffer) {
-		delete[] mBuffer;
-		mBuffer = nullptr;
-	}
-	mBufSize = 0;
-
 	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer unprepare fail : reset_audio_stream_out fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
@@ -264,6 +258,11 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 
 	mInputHandler.close();
 
+	if (mBuffer) {
+		delete[] mBuffer;
+		mBuffer = nullptr;
+	}
+	mBufSize = 0;
 	mCurState = PLAYER_STATE_IDLE;
 	return notifySync();
 }

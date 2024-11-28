@@ -1,5 +1,5 @@
 
-/media/jw/E/AIDual_KM4/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_hp/asdk/image/target_img2.axf:     file format elf32-littlearm
+/home/henry/gerrit/master/project/realtek_amebaD2_va0_example/GCC-RELEASE/project_hp/asdk/image/target_img2.axf:     file format elf32-littlearm
 
 
 Disassembly of section .xip_image2.text:
@@ -109113,20 +109113,20 @@ Disassembly of section .xip_image2.text:
 
 0d05502c <lib_cmsis_dsp_git_rev>:
  d05502c:	6c20 6269 635f 736d 7369 645f 7073 765f      lib_cmsis_dsp_v
- d05503c:	7265 615f 3364 3964 3636 3434 5f31 3032     er_ad3d966441_20
- d05504c:	3432 302f 2f39 3131 312d 3a38 3332 303a     24/09/11-18:23:0
- d05505c:	0034                                        4.
+ d05503c:	7265 645f 3833 6138 3963 3339 5f32 3032     er_d388ac9932_20
+ d05504c:	3432 302f 2f39 3532 312d 3a32 3332 343a     24/09/25-12:23:4
+ d05505c:	0038                                        8.
 
 0d05505e <lib_user_git_rev>:
- d05505e:	6c20 6269 755f 6573 5f72 6576 5f72 6461      lib_user_ver_ad
- d05506e:	6433 3639 3436 3134 325f 3230 2f34 3930     3d966441_2024/09
- d05507e:	312f 2d31 3831 323a 3a33 3430                /11-18:23:04.
+ d05505e:	6c20 6269 755f 6573 5f72 6576 5f72 3364      lib_user_ver_d3
+ d05506e:	3838 6361 3939 3233 325f 3230 2f34 3930     88ac9932_2024/09
+ d05507e:	322f 2d35 3231 323a 3a33 3734                /25-12:23:47.
 
 0d05508b <km4_application_git_rev>:
  d05508b:	6b20 346d 615f 7070 696c 6163 6974 6e6f      km4_application
- d05509b:	765f 7265 615f 3364 3964 3636 3434 5f31     _ver_ad3d966441_
- d0550ab:	3032 3432 302f 2f39 3131 312d 3a38 3032     2024/09/11-18:20
- d0550bb:	343a 0034                                   :44.
+ d05509b:	765f 7265 645f 3833 6138 3963 3339 5f32     _ver_d388ac9932_
+ d0550ab:	3032 3432 302f 2f39 3532 312d 3a32 3232     2024/09/25-12:22
+ d0550bb:	323a 0037                                   :27.
 
 0d0550bf <__git_ver_table_end__>:
 	...

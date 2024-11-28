@@ -73,7 +73,7 @@
 
 #define AUDIO_STREAM_RETRY_COUNT 2
 
-#define AUDIO_DEVICE_MAX_VOLUME 10
+#define AUDIO_DEVICE_MAX_VOLUME 15
 
 #ifndef CONFIG_AUDIO_MAX_INPUT_CARD_NUM
 #define CONFIG_AUDIO_MAX_INPUT_CARD_NUM 2
@@ -1264,7 +1264,7 @@ unsigned int get_output_frame_count(void)
 		return 0;
 	}
 
-	return pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
+	return get_user_output_bytes_to_frame(pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm));
 }
 
 unsigned int get_card_output_frames_to_byte(unsigned int frames)
