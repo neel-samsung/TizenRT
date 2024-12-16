@@ -588,7 +588,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	 * invalid at this point. If we dont pause other cpu's then it might lead
 	 * to multiple asserts.
 	 */
-	if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
+	// if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		int me = sched_getcpu();
 		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
 			if (cpu != me) {
@@ -600,7 +600,7 @@ void up_assert(const uint8_t *filename, int lineno)
 			}
 
 		}
-	}
+	// }
 #endif
 
 	struct tcb_s *fault_tcb = this_task();
@@ -635,7 +635,16 @@ void up_assert(const uint8_t *filename, int lineno)
 	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
 	lldbg_noarg("\n");
 #endif
-
+			// flags = enter_critical_section();
+		// if(bin_idx == 1) {
+			// me = sched_getcpu();
+			// for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+			// 	if (cpu !=  me && up_is_cpu_paused(cpu)) {
+			// 			up_cpu_resume(cpu);
+			// 		}
+			// }
+		// }
+		// // leave_critical_section(flags);
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
@@ -644,7 +653,8 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	{
 		/* treat kernel fault */
-		arm_assert();
+		lldbg("Assert location: %d\n",asserted_location);
+		binary_manager_recover_userfault();
 	}
 	leave_critical_section(flags);
 }

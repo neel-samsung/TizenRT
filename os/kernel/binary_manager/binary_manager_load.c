@@ -476,6 +476,7 @@ static int loading_thread(int argc, char *argv[])
  ****************************************************************************/
 static int loadingall_thread(int argc, char *argv[])
 {
+		lldbg("check 1");
 	int ret;
 	int bin_idx;
 	int load_cnt;
@@ -543,6 +544,7 @@ static int loadingall_thread(int argc, char *argv[])
  ****************************************************************************/
 static int reloading_thread(int argc, char *argv[])
 {
+	lldbg("check 1");
 	int ret;
 	int load_cmd;
 
@@ -728,6 +730,7 @@ void binary_manager_release_binary_sem(int bin_idx)
  ****************************************************************************/
 int binary_manager_execute_loader(int cmd, int bin_idx)
 {
+	lldbg("check 1\n");
 	int ret;
 	uint8_t loader_priority;
 	main_t loader_func;

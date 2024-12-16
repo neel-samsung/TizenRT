@@ -63,6 +63,7 @@ static void *assert_thread(void *index)
 		sleep(1);
 		*(obj.addr) = 0xdeadbeef;
 	} else {
+		PANIC();
 		/* Access another binary 'micom' address */
 		obj.type = MEM_PROTECTTEST_APP_ADDR;
 		ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
