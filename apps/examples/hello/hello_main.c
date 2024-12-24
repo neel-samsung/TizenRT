@@ -55,18 +55,65 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <sched.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <string.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+
+#define CPU_ZERO(s) do { *(s) = 0; } while (0)
+#define CPU_SET(c,s) do { *(s) |= (1 << (c)); } while (0)
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+ static void set_affinity(void)
+{
+	cpu_set_t cpu_set;
+	int affinity = 0;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(affinity, &cpu_set);
+	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set) != 0) {
+		return;
+	}
+}
 
+
+ int normal_task()
+ {
+	set_affinity();
+	while (1) {
+		printf("We are in p thread\n");
+	}
+ }
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int hello_main(int argc, char *argv[])
 #endif
 {
+	int* ptr;
+    int n = 100;
+	int pid = task_create("core1_task", 150, 1024, normal_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		printf("  Main[0]: Error in thread create, ret=%d\n", pid);
+		printf("  Main[0]: Test aborted with waiting threads\n");
+	} else {
+		printf("  Main[0]: Thread %d created\n", pid);
+	}
+
+    // Dynamically allocate memory using malloc()
+	do {
+		ptr = (int*)malloc(n * sizeof(int));
+	} while (1);
+	PANIC();
+    
 	printf("Hello, World!!\n");
 	return 0;
 }
