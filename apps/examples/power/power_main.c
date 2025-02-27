@@ -22,6 +22,9 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/lcd/lcd_dev.h>
+#include <tinyara/input/touchscreen.h>
+
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -40,31 +43,103 @@
  ****************************************************************************/
 
 #define PM_DRVPATH "/dev/pm"
+#define TOUCH_DEV_PATH "/dev/touch0"
+#define LCD_DEV_PATH "/dev/lcd%d"
+
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 static int is_running;
+unsigned long long itr_cnt = 0;
 
 
 static int pm_sleep_test(void)
 {
+	int p = 0;
+	char port[20] = { '\0' };
 	printf("pm sleep thread start\n");
-	int fd = open(PM_DRVPATH, O_WRONLY);
-	if (fd < 0) {
+	pm_domain_arg_t domain_arg;
+	int domain_id;
+
+	sprintf(port, LCD_DEV_PATH, p);
+	int fd1 = open(PM_DRVPATH, O_WRONLY);
+	if (fd1 < 0) {
 		printf("Fail to open pm sleep(errno %d)", get_errno());
 		return -1;
 	}
+	int fd2 = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd2 < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd2);
+		return ERROR;	
+	}
+
+	int fd3 = open(TOUCH_DEV_PATH, O_RDWR);
+	if (fd3 < 0) {
+		printf("Fail to open %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+		return ERROR;
+	}
+
+	domain_arg.domain_name = "SLEEP_TEST";
+	if (ioctl(fd1, PMIOC_DOMAIN_REGISTER, &domain_arg) < 0) {
+		printf("Fail to register pm domain(errno %d)", get_errno());
+		close(fd1);
+		return -1;
+	}
+	domain_id = domain_arg.domain_id;
 
 	while (is_running) {
-		if (ioctl(fd, PMIOC_SLEEP, 100) < 0) {
+		/* sleep and wake up for 100ms */
+		// printf("sleep\n");
+		if (ioctl(fd1, PMIOC_SLEEP, 100) < 0) {
 			printf("Fail to pm sleep(errno %d)\n", get_errno());
-			close(fd);
+			close(fd1);
 			return -1;
 		}
+		// printf("Wake up\n");
+
+		// printf("call suspend (%d)\n");
+		if(ioctl(fd1, PMIOC_SUSPEND, domain_id) < 0) {
+			printf("Fail to suspend(errno %d)\n", get_errno());
+			break;
+		}
+
+		/* sleep iteration count */
+		itr_cnt++;
+
+		/* set lcd to turn on fully */
+		if (ioctl(fd2, LCDDEVIO_SETPOWER, 100) < 0) {
+			printf("Fail to turn on the LCD", get_errno());
+			close(fd2);
+			return -1;
+		}
+
+		/* enable touch functionality */
+		if (ioctl(fd3, TSIOC_ENABLE, NULL) != OK) {
+			printf("Fail to TSIOC_ENABLE %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+			close(fd3);
+		}
+
+		/* disable touch functionality */
+		if (ioctl(fd3, TSIOC_DISABLE, NULL) != OK) {
+			printf("Fail to TSIOC_DISABLE %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+			close(fd3);
+		}
+
+		/* set lcd to turn off fully */
+		if (ioctl(fd2, LCDDEVIO_SETPOWER, 0) < 0) {
+			printf("Fail to turn off the LCD", get_errno());
+			close(fd2);
+			return -1;
+		}
+		// printf("call resume(%d)\n");
+		if(ioctl(fd1, PMIOC_RESUME, domain_id) < 0) {
+			printf("Fail to resume(errno %d)\n", get_errno());
+			close(fd1);
+			break;
+		}
 	}
-	close(fd);
 	return 0;
 }
 
@@ -127,7 +202,7 @@ static int start_pm_test(int argc, char *argv[])
 		printf("Fail to open pm start(errno %d)", get_errno());
 		return -1;
 	}
-	if(ioctl(fd, PMIOC_RESUME, 0) < 0) {
+	if(ioctl(fd, PMIOC_START, 0) < 0) {
 		printf("Fail to pm start(errno %d)\n", get_errno());
 		close(fd);
 		return -1;
@@ -216,6 +291,8 @@ int power_main(int argc, char *argv[])
 
 
 	} else if (strncmp(argv[1], "stop", 5) == 0) {
+		printf("Count of iteration: %llu\n", itr_cnt);
+		itr_cnt = 0;
 		if (!is_running) {
 			printf("power test is not running\n");
 			return 0;
