@@ -125,23 +125,8 @@ void pm_idle(void)
 					continue;
 				}
 
-				/* Gate the cpu first, before checking which task it is handling */
-				if (!up_get_gating_flag_status(cpu)) {
-					up_set_gating_flag_status(cpu, 1);
-					up_cpu_gating(cpu);
-					gated_cpu_count = cpu;
-				}
-				while (up_get_gating_flag_status(cpu) == 1) {
-					/* If there is a pause request, we should handle it first */
-					if (up_cpu_pausereq(up_cpu_index())) {
-						pmdbg("Sleep abort! CPU%d\n", cpu);
-						goto EXIT;
-					}
-				}
-
 				tcb = current_task(cpu);
-				/* Check if current cpu is in idle thread, and whether there is pending
-				 * pause request on primary core 
+				/* Check if current cpu is in idle thread
 				 */
 				if (tcb->pid != cpu) {
 					pmvdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
